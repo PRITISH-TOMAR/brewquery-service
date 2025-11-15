@@ -1,4 +1,4 @@
-package club.sqlhub.utils;
+package club.sqlhub.utils.APiResponse;
 
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonInclude;

@@ -4,7 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import club.sqlhub.constants.AppConstants;
-import club.sqlhub.utils.ApiResponse;
+import club.sqlhub.utils.APiResponse.ApiResponse;
 
 @Service
 public class HomeService {
