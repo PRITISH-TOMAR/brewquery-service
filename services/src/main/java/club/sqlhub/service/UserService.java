@@ -14,7 +14,7 @@ import club.sqlhub.constants.MessageConstants;
 import club.sqlhub.entity.user.UserDetailsDBO;
 import club.sqlhub.queries.UserQueries;
 import club.sqlhub.utils.APiResponse.ApiResponse;
-import club.sqlhub.utils.User.OtpHandler;
+import club.sqlhub.utils.OTP.OtpHandler;
 
 @Service
 public class UserService {
