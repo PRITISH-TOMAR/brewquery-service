@@ -2,19 +2,30 @@ package club.sqlhub.utils.APiResponse;
 
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Getter
 public class ApiResponse<T> {
     private int status;
     private String message;
     private T data;
+    private String error;
     private List<T> dataList;
 
     public ApiResponse(HttpStatus httpStatus, String message) {
         this.status = httpStatus.value();
         this.message = message;
+    }
+
+    public ApiResponse(HttpStatus httpStatus, String message, Exception err) {
+        this.status = httpStatus.value();
+        this.message = message;
+        this.error = err.getMessage();
     }
 
     public ApiResponse(HttpStatus httpStatus, String message, T data) {
@@ -44,20 +55,10 @@ public class ApiResponse<T> {
         return ResponseEntity.status(httpStatus).body(apiResponse);
     }
 
-    // Getters
-    public int getStatus() {
-        return status;
+    public static <T> ResponseEntity<ApiResponse<T>> error(HttpStatus httpStatus, String message, Exception err) {
+        ApiResponse<T> apiResponse = new ApiResponse<>(httpStatus, message, err);
+        return ResponseEntity.status(httpStatus).body(apiResponse);
     }
 
-    public String getMessage() {
-        return message;
-    }
 
-    public T getData() {
-        return data;
-    }
-
-    public List<T> getDataList() {
-        return dataList;
-    }
 }
