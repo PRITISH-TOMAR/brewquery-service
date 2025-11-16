@@ -17,7 +17,7 @@ public class UserQueries {
                         country_code AS countryCode,
                         profile_picture_url AS profilePictureUrl
                         FROM user_details
-                        WHERE email = ?;
+                        WHERE email = ?
                         """;
         public final String INSERT_USER_DETAILS = """
                         INSERT INTO user_details
@@ -44,7 +44,7 @@ public class UserQueries {
                         country_code AS countryCode,
                         profile_picture_url AS profilePictureUrl
                         FROM user_details
-                        WHERE user_id = LAST_INSERT_ID();
+                        WHERE user_id = LAST_INSERT_ID()
                                 """;
 
 }
