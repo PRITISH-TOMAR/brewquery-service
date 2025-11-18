@@ -5,6 +5,8 @@ import org.springframework.web.bind.annotation.RestController;
 import club.sqlhub.entity.user.DBO.UserDetailsDBO;
 import club.sqlhub.entity.user.DTO.RegisterUserDTO;
 import club.sqlhub.entity.user.DTO.UserDetailsDTO;
+import club.sqlhub.entity.user.DTO.UserLoginDTO;
+import club.sqlhub.entity.utlities.UserJWTDetailsDBO;
 import club.sqlhub.service.UserService;
 import club.sqlhub.utils.APiResponse.ApiResponse;
 import jakarta.validation.Valid;
@@ -27,5 +29,10 @@ public class UserController {
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<UserDetailsDTO>> RegisterUser(@Valid @RequestBody RegisterUserDTO req) {
         return userService.registerUser(req);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<UserJWTDetailsDBO>> RegisterUser(@Valid @RequestBody UserLoginDTO req) {
+        return userService.loginUser(req);
     }
 }

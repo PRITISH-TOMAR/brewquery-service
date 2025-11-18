@@ -54,4 +54,9 @@ public class UserHandler {
         }
     }
 
+    public boolean validPassword(String password, String hashPassword, String salt) {
+        String calculatedHash = hashPassword(password, salt);
+        return calculatedHash.equals(hashPassword);
+    }
+
 }

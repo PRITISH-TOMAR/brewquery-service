@@ -11,5 +11,8 @@ public class MessageConstants {
     public static String INVALID_OTP = "INVALID OTP";
     public static String OTP_VERIFIED_SUCCESSFULLY = "OTP_VERIFIED_SUCCESSFULLY";
     public static String NO_USER_EXISTS_FOR_THIS_EMAIL = "NO_USER_EXISTS_FOR_THIS_EMAIL";
+    public static String USER_LOGIN_SUCCESSFULLY = "USER_LOGIN_SUCCESSFULLY";
+    public static String USER_NOT_FOUND = "USER_NOT_FOUND";
+    public static String CAN_NOT_LOGIN_NEED_TO_VERIFY_FIRST = "CAN_NOT_LOGIN_NEED_TO_VERIFY_FIRST";
 
 }

@@ -8,13 +8,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import club.sqlhub.Repository.UserRepository;
+import club.sqlhub.constants.AppConstants;
 import club.sqlhub.constants.MessageConstants;
 import club.sqlhub.entity.user.DBO.UserDetailsDBO;
 import club.sqlhub.entity.user.DTO.RegisterUserDTO;
 import club.sqlhub.entity.user.DTO.UserDetailsDTO;
+import club.sqlhub.entity.user.DTO.UserLoginDTO;
+import club.sqlhub.entity.utlities.UserJWTDetailsDBO;
 import club.sqlhub.queries.UserQueries;
 import club.sqlhub.utils.APiResponse.ApiResponse;
+import club.sqlhub.utils.Auth.JWTHandler;
 import club.sqlhub.utils.User.UserHandler;
+import lombok.RequiredArgsConstructor;
 
 @Service
 public class UserService {
@@ -22,11 +27,13 @@ public class UserService {
     private final UserQueries queries;
     private final UserRepository repository;
     private final UserHandler userHandler;
+    private final JWTHandler jwtHandler;
 
-    public UserService(UserQueries queries, UserRepository repository, UserHandler userHandler) {
+    public UserService(UserQueries queries, UserRepository repository, UserHandler userHandler, JWTHandler jwtHandler) {
         this.queries = queries;
         this.repository = repository;
         this.userHandler = userHandler;
+        this.jwtHandler = jwtHandler;
     }
 
     @Transactional
@@ -57,4 +64,30 @@ public class UserService {
         }
     }
 
+    public ResponseEntity<ApiResponse<UserJWTDetailsDBO>> loginUser(UserLoginDTO user) {
+        try {
+            List<UserDetailsDBO> existUser = repository.userExists(user.getEmail(), queries.IF_USER_EXISTS);
+
+            if (existUser.isEmpty()) {
+                return ApiResponse.call(HttpStatus.NOT_FOUND, MessageConstants.USER_NOT_FOUND);
+            }
+
+            boolean validPassword = userHandler.validPassword(user.getPassword(), existUser.get(0).getHashedPassword(),
+                    existUser.get(0).getSalt());
+
+            if (!validPassword)
+                return ApiResponse.call(HttpStatus.NOT_FOUND, MessageConstants.USER_NOT_FOUND);
+
+            String subject = existUser.get(0).getUserId().toString();
+
+            UserJWTDetailsDBO resUser = jwtHandler.buildUserJWTDetails(subject, existUser.get(0));
+
+            if (existUser.get(0).getStatus().equals(AppConstants.DEFAULT_STATUS)) {
+                return ApiResponse.call(HttpStatus.FORBIDDEN, MessageConstants.CAN_NOT_LOGIN_NEED_TO_VERIFY_FIRST);
+            }
+            return ApiResponse.call(HttpStatus.OK, MessageConstants.USER_LOGIN_SUCCESSFULLY, resUser);
+        } catch (Exception ex) {
+            return ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, MessageConstants.INTERNAL_SERVER_ERROR, ex);
+        }
+    }
 }

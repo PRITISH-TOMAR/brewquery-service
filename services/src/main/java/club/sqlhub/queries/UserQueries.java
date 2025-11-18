@@ -15,10 +15,13 @@ public class UserQueries {
                         phone_number AS phoneNumber,
                         status AS status,
                         country_code AS countryCode,
-                        profile_picture_url AS profilePictureUrl
+                        profile_picture_url AS profilePictureUrl,
+                        hashed_password AS hashedPassword,
+                        salt AS salt
                         FROM user_details
                         WHERE email = ?
                         """;
+                        
         public final String INSERT_USER_DETAILS = """
                         INSERT INTO user_details
                         (
