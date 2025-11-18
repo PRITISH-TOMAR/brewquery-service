@@ -14,7 +14,7 @@ import club.sqlhub.utils.APiResponse.ApiResponse;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/otp")
+@RequestMapping("/auth")
 public class AuthController {
     private final AuthService authService;
 

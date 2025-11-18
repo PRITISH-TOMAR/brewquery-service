@@ -78,7 +78,7 @@ public class UserService {
             if (!validPassword)
                 return ApiResponse.call(HttpStatus.NOT_FOUND, MessageConstants.USER_NOT_FOUND);
 
-            String subject = existUser.get(0).getUserId().toString();
+            String subject = existUser.get(0).getEmail();
 
             UserJWTDetailsDBO resUser = jwtHandler.buildUserJWTDetails(subject, existUser.get(0));
 
