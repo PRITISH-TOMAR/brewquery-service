@@ -1,4 +1,4 @@
-package club.sqlhub.utils.OTP;
+package club.sqlhub.utils.Auth;
 
 import java.util.Random;
 

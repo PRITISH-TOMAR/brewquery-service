@@ -14,11 +14,14 @@ CREATE TABLE user_details
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
-    status ENUM('ACTIVE', 'INACTIVE', 'BLOCKED') NOT NULL DEFAULT 'ACTIVE',
+    status ENUM('ACTIVE', 'INACTIVE', 'BLOCKED', 'IN_PROGRESS')  DEFAULT 'IN_PROGRESS',
     role_id INT NOT NULL DEFAULT 1,
     phone_number VARCHAR(10),
     country_code VARCHAR(7),
     profile_picture_url TEXT,
+    hashed_password TEXT NOT NULL,
+    salt TEXT NOT NULL,
+    last_login DATETIME,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_user_details_role FOREIGN KEY (role_id) REFERENCES user_roles(role_id)
@@ -27,13 +30,3 @@ CREATE TABLE user_details
 CREATE UNIQUE INDEX idx_user_email ON user_details(email);
 
 
-CREATE TABLE user_auth
-(
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT NOT NULL,
-    hashed_password TEXT NOT NULL,
-    salt TEXT NOT NULL,
-    last_login DATETIME,
-    verified BOOLEAN NOT NULL DEFAULT FALSE,
-    CONSTRAINT fk_user_auth_user FOREIGN KEY (user_id) REFERENCES user_details(user_id)
-);

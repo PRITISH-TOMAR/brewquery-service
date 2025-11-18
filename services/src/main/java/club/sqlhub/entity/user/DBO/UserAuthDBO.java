@@ -1,4 +1,4 @@
-package club.sqlhub.entity.user;
+package club.sqlhub.entity.user.DBO;
 
 import java.time.LocalDateTime;
 

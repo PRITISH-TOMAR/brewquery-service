@@ -2,9 +2,12 @@ package club.sqlhub.controller;
 
 import org.springframework.web.bind.annotation.RestController;
 
-import club.sqlhub.entity.user.UserDetailsDBO;
+import club.sqlhub.entity.user.DBO.UserDetailsDBO;
+import club.sqlhub.entity.user.DTO.RegisterUserDTO;
+import club.sqlhub.entity.user.DTO.UserDetailsDTO;
 import club.sqlhub.service.UserService;
 import club.sqlhub.utils.APiResponse.ApiResponse;
+import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,7 +25,7 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<UserDetailsDBO>> RegisterUser(@RequestBody UserDetailsDBO req) {
+    public ResponseEntity<ApiResponse<UserDetailsDTO>> RegisterUser(@Valid @RequestBody RegisterUserDTO req) {
         return userService.registerUser(req);
     }
 }

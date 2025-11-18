@@ -1,28 +1,27 @@
-package club.sqlhub.entity.user;
+package club.sqlhub.entity.user.DTO;
 
-import jakarta.validation.constraints.*;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class UserDetailsDBO {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class UserDetailsDTO {
     private Integer userId;
 
     private String firstName;
 
     private String lastName;
 
-    @Email(message = "Invalid Email Format")
     private String email;
 
     private String status;
-
-    private Integer roleId = 1;
 
     private String phoneNumber;
 
     private String countryCode;
 
-    private String profilePictureUrl = null;
+    private String profilePictureUrl;
+
 }

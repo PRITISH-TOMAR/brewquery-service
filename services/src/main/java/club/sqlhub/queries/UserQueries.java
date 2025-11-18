@@ -9,7 +9,7 @@ public class UserQueries {
                         SELECT
                         user_id AS userId,
                         first_name AS firstName,
-                        last_name AS lastName
+                        last_name AS lastName,
                         email AS email,
                         role_id AS roleId,
                         phone_number AS phoneNumber,
@@ -22,16 +22,20 @@ public class UserQueries {
         public final String INSERT_USER_DETAILS = """
                         INSERT INTO user_details
                         (
-                        first_name,
-                        last_name,
-                        email,
-                        role_id,
-                        phone_number,
-                        country_code,
-                        profile_picture_url
+                            first_name,
+                            last_name,
+                            email,
+                            status,
+                            role_id,
+                            phone_number,
+                            country_code,
+                            profile_picture_url,
+                            hashed_password,
+                            salt
                         )
-                        VALUES (?, ?, ? , ?, ?, ?, ?)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """;
+
         public final String GET_LAST_INSERTED_USER = """
                         SELECT
                         user_id AS userId,
@@ -45,6 +49,6 @@ public class UserQueries {
                         profile_picture_url AS profilePictureUrl
                         FROM user_details
                         WHERE user_id = LAST_INSERT_ID()
-                                """;
+                        """;
 
 }
