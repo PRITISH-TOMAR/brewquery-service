@@ -2,6 +2,7 @@ package club.sqlhub.utils.Auth;
 
 import java.io.IOException;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -9,6 +10,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import club.sqlhub.entity.utlities.enums.AuthEnum;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,11 +36,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String token = authHeader.substring(7);
         try {
-            if (!jwtHandler.validateToken(token)) {
+
+            AuthEnum.TokenValidationResult result = jwtHandler.validateToken(token);
+            if (result == AuthEnum.TokenValidationResult.INVALID) {
                 filterChain.doFilter(request, response);
                 return;
             }
-
+            if (result == AuthEnum.TokenValidationResult.EXPIRED) {
+                response.setStatus(HttpServletResponse.SC_GONE);
+                return;
+            }
             String email = jwtHandler.extractSubject(token);
 
             if (email == null || email.isBlank()) {

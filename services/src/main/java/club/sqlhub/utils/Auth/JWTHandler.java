@@ -12,8 +12,10 @@ import club.sqlhub.entity.user.DBO.UserDetailsDBO;
 import club.sqlhub.entity.user.DTO.UserDetailsDTO;
 import club.sqlhub.entity.utlities.TokenDBO;
 import club.sqlhub.entity.utlities.UserJWTDetailsDBO;
+import club.sqlhub.entity.utlities.enums.AuthEnum;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -79,19 +81,21 @@ public class JWTHandler {
     }
 
     // Validate token signature and expiration. Returns true if token valid.
-    public boolean validateToken(String token) {
+    public AuthEnum.TokenValidationResult validateToken(String token) {
         try {
             Jwts.parser()
                     .verifyWith(getSigningKey())
                     .build()
                     .parseSignedClaims(token);
-
-            return true;
-
+            return AuthEnum.TokenValidationResult.VALID;
+        } catch (ExpiredJwtException e) {
+            return AuthEnum.TokenValidationResult.EXPIRED;
         } catch (Exception e) {
-            return false;
+            return AuthEnum.TokenValidationResult.INVALID;
         }
     }
+
+    
 
     public String extractSubject(String token) {
         return Jwts.parser()
@@ -110,11 +114,12 @@ public class JWTHandler {
                 .getPayload();
     }
 
-    public UserJWTDetailsDBO buildUserJWTDetails(String subject, UserDetailsDBO u) {
+    public UserJWTDetailsDBO buildUserJWTDetails(String subject, UserDetailsDBO u, Boolean rememberMe) {
 
         TokenDBO tokenDBO = new TokenDBO();
         tokenDBO.setAccessToken(generateToken(subject));
-        tokenDBO.setRefreshToken(generateRefreshToken(subject));
+        if (rememberMe)
+            tokenDBO.setRefreshToken(generateRefreshToken(subject));
 
         UserDetailsDTO dto = new UserDetailsDTO();
         dto.setUserId(u.getUserId());

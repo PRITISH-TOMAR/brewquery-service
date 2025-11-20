@@ -17,6 +17,7 @@ public class HomeController {
     }
 
     @GetMapping("/")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<ApiResponse<String>> home() {
         return homeService.home();
     }

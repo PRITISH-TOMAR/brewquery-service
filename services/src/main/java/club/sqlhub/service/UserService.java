@@ -78,7 +78,7 @@ public class UserService {
 
             String subject = existUser.get(0).getEmail();
 
-            UserJWTDetailsDBO resUser = jwtHandler.buildUserJWTDetails(subject, existUser.get(0));
+            UserJWTDetailsDBO resUser = jwtHandler.buildUserJWTDetails(subject, existUser.get(0), user.getRememberMe());
 
             return ApiResponse.call(HttpStatus.OK, MessageConstants.USER_LOGIN_SUCCESSFULLY, resUser);
         } catch (Exception ex) {
