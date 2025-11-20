@@ -31,7 +31,7 @@ public class UserService {
     private final UserRepository repository;
     private final UserHandler userHandler;
     private final JWTHandler jwtHandler;
-    private final RedisTemplate redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Transactional
     public ResponseEntity<ApiResponse<UserDetailsDTO>> registerUser(RegisterUserDTO user) {
