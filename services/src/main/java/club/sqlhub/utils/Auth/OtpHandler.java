@@ -1,6 +1,7 @@
 package club.sqlhub.utils.Auth;
 
 import java.util.Random;
+import java.util.UUID;
 
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -28,6 +29,14 @@ public class OtpHandler {
 
     public String limitKey(String email) {
         return AppConstants.REDIS_OTP_RATE_LIMIT__KEY + email;
+    }
+
+    public String emailVerificationKey(String uuid) {
+        return AppConstants.REDIS_EMAIL_VERIFICATION_KEY + uuid;
+    }
+
+    public String generateUuidForEmailVerification(String email) {
+        return UUID.randomUUID().toString() + "-" + email;
     }
 
     public void sendEmailOTP(String toEmail, String otp) {

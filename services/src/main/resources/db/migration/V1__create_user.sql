@@ -14,7 +14,7 @@ CREATE TABLE user_details
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
-    status ENUM('ACTIVE', 'INACTIVE', 'BLOCKED', 'IN_PROGRESS')  DEFAULT 'IN_PROGRESS',
+    status ENUM('ACTIVE', 'INACTIVE', 'BLOCKED', 'IN_PROGRESS')  DEFAULT 'ACTIVE',
     role_id INT NOT NULL DEFAULT 1,
     phone_number VARCHAR(10),
     country_code VARCHAR(7),

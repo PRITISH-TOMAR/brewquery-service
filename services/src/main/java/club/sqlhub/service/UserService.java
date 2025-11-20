@@ -2,6 +2,7 @@ package club.sqlhub.service;
 
 import java.util.List;
 
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -19,31 +20,28 @@ import club.sqlhub.queries.UserQueries;
 import club.sqlhub.utils.APiResponse.ApiResponse;
 import club.sqlhub.utils.Auth.JWTHandler;
 import club.sqlhub.utils.User.UserHandler;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 @Service
+@AllArgsConstructor
 public class UserService {
 
     private final UserQueries queries;
     private final UserRepository repository;
     private final UserHandler userHandler;
     private final JWTHandler jwtHandler;
-
-    public UserService(UserQueries queries, UserRepository repository, UserHandler userHandler, JWTHandler jwtHandler) {
-        this.queries = queries;
-        this.repository = repository;
-        this.userHandler = userHandler;
-        this.jwtHandler = jwtHandler;
-    }
+    private final RedisTemplate redisTemplate;
 
     @Transactional
     public ResponseEntity<ApiResponse<UserDetailsDTO>> registerUser(RegisterUserDTO user) {
         try {
+            String emailKey = user.getEmailKey().getKey();
+            String storedValue = (String) redisTemplate.opsForValue().get(emailKey);
 
-            List<UserDetailsDBO> existUser = repository.userExists(user.getEmail(), queries.IF_USER_EXISTS);
-
-            if (!existUser.isEmpty()) {
-                return ApiResponse.call(HttpStatus.CONFLICT, MessageConstants.USER_ALREADY_EXISTS);
+            if (storedValue == null || !storedValue.equals(user.getEmail())) {
+                return ApiResponse.call(HttpStatus.INTERNAL_SERVER_ERROR,
+                        MessageConstants.EMAIL_VERFICATION_KEY_EXPIRED);
             }
             UserDetailsDBO newUser = userHandler.convertRegisterDtoToDbo(user);
 
@@ -82,9 +80,6 @@ public class UserService {
 
             UserJWTDetailsDBO resUser = jwtHandler.buildUserJWTDetails(subject, existUser.get(0));
 
-            if (existUser.get(0).getStatus().equals(AppConstants.DEFAULT_STATUS)) {
-                return ApiResponse.call(HttpStatus.FORBIDDEN, MessageConstants.CAN_NOT_LOGIN_NEED_TO_VERIFY_FIRST);
-            }
             return ApiResponse.call(HttpStatus.OK, MessageConstants.USER_LOGIN_SUCCESSFULLY, resUser);
         } catch (Exception ex) {
             return ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, MessageConstants.INTERNAL_SERVER_ERROR, ex);

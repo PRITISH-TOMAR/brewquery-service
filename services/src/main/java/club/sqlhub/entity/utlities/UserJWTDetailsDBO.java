@@ -8,9 +8,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class UserJWTDetailsDBO {
-    private String accessToken;
-    private String refreshToken;
-    private long expiresIn = AppConstants.ACCESS_TOKEN_TTL_MS;
 
+    private TokenDBO tokenDetails;
     private UserDetailsDTO user;
 }

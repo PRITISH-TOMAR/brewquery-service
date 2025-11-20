@@ -1,5 +1,6 @@
 package club.sqlhub.entity.user.DTO;
 
+import club.sqlhub.entity.utlities.EmailVerifyDTO;
 import jakarta.validation.constraints.Email;
 import lombok.Data;
 import lombok.Getter;
@@ -26,4 +27,6 @@ public class RegisterUserDTO {
     private String profilePictureUrl = null;
 
     private String password;
+
+    private EmailVerifyDTO emailKey;
 }

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import club.sqlhub.constants.AppConstants;
 import club.sqlhub.entity.user.DBO.UserDetailsDBO;
 import club.sqlhub.entity.user.DTO.UserDetailsDTO;
+import club.sqlhub.entity.utlities.TokenDBO;
 import club.sqlhub.entity.utlities.UserJWTDetailsDBO;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.jsonwebtoken.Claims;
@@ -111,8 +112,9 @@ public class JWTHandler {
 
     public UserJWTDetailsDBO buildUserJWTDetails(String subject, UserDetailsDBO u) {
 
-        String accessToken = generateToken(subject);
-        String refreshAccessToken = generateRefreshToken(subject);
+        TokenDBO tokenDBO = new TokenDBO();
+        tokenDBO.setAccessToken(generateToken(subject));
+        tokenDBO.setRefreshToken(generateRefreshToken(subject));
 
         UserDetailsDTO dto = new UserDetailsDTO();
         dto.setUserId(u.getUserId());
@@ -125,9 +127,8 @@ public class JWTHandler {
         dto.setProfilePictureUrl(u.getProfilePictureUrl());
 
         UserJWTDetailsDBO jwtUser = new UserJWTDetailsDBO();
+        jwtUser.setTokenDetails(tokenDBO);
         jwtUser.setUser(dto);
-        jwtUser.setAccessToken(accessToken);
-        jwtUser.setRefreshToken(refreshAccessToken);
 
         return jwtUser;
     }
