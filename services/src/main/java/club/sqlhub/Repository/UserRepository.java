@@ -7,7 +7,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import club.sqlhub.entity.user.DBO.UserDetailsDBO;
-import club.sqlhub.entity.user.DTO.RegisterUserDTO;
 import club.sqlhub.entity.user.DTO.UserDetailsDTO;
 import lombok.RequiredArgsConstructor;
 

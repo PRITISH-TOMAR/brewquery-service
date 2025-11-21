@@ -3,6 +3,7 @@ package club.sqlhub.utils.Auth;
 import java.util.Random;
 import java.util.UUID;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -35,22 +36,22 @@ public class OtpHandler {
         return AppConstants.REDIS_EMAIL_VERIFICATION_KEY + uuid;
     }
 
-    public String generateUuidForEmailVerification(String email) {
-        return UUID.randomUUID().toString() + "-" + email;
+    public String passwordResetKey(String email) {
+        return AppConstants.PASSWORD_RESET_KEY + email;
     }
 
-    public void sendEmailOTP(String toEmail, String otp) {
+    public String passwordResetLimitKey(String email) {
+        return AppConstants.PASSWORD_RESET_LIMIT_KEY;
+    }
 
-        try {
-            MimeMessage minmeMessage = mailSender.createMimeMessage();
-            MimeMessageHelper message = new MimeMessageHelper(minmeMessage, "utf-8");
-            message.setTo(toEmail);
-            message.setSubject("Your OTP Code");
-            message.setText(OTPTemplate.getOtpHtmlTemplate(otp), true);
+    public String generateUuidForEmailVerification(String email) {
+        String raw = UUID.randomUUID().toString() + "-" + email;
+        return DigestUtils.sha256Hex(raw);
 
-            mailSender.send(minmeMessage);
-        } catch (Exception ex) {
-            throw new RuntimeException("Failed to send OTP email");
-        }
+    }
+
+    public String generateUuidForResetPasswordEmail(String email) {
+        String raw = UUID.randomUUID().toString() + "-" + email;
+        return DigestUtils.sha256Hex(raw);
     }
 }
