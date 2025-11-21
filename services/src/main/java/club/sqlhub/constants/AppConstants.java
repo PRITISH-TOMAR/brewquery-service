@@ -1,14 +1,11 @@
 package club.sqlhub.constants;
 
 import org.springframework.stereotype.Component;
-
-import io.github.cdimascio.dotenv.Dotenv;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @Component
 public class AppConstants {
-    private final Dotenv dotenv;
 
     public static final String NOT_FOUND = "This site can't be reached.";
     public static final Integer OTP_REQUEST_LIMIT = 5;
@@ -26,5 +23,5 @@ public class AppConstants {
 
     // JWT
     public static final long ACCESS_TOKEN_TTL_MS = 60 * 60 * 1000L; // 1 hour
-    public static final long REFRESH_TOKEN_TTL_MS = 7L * 24 * 60 * 60 * 1000L;
+    public static final long REFRESH_TOKEN_TTL_MS = 15 * 60 * 60 * 24 * 1000L; // 15 days
 }
