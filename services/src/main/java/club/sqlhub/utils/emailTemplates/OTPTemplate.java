@@ -1,4 +1,4 @@
-package club.sqlhub.utils.Auth;
+package club.sqlhub.utils.emailTemplates;
 
 public class OTPTemplate {
     public static String getOtpHtmlTemplate(String otp) {
