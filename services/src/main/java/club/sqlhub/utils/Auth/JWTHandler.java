@@ -58,12 +58,12 @@ public class JWTHandler {
                 .compact();
     }
 
-    private String generateToken(String subject) {
+    public String generateToken(String subject) {
         return generateToken(subject, null);
     }
 
     // Refresh token generation (longer TTL)
-    private String generateRefreshToken(String subject) {
+    public String generateRefreshToken(String subject) {
 
         var claims = Jwts.claims()
                 .subject(subject)

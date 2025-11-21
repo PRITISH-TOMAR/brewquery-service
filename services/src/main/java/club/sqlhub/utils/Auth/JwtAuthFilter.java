@@ -2,7 +2,6 @@ package club.sqlhub.utils.Auth;
 
 import java.io.IOException;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -29,27 +28,44 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
+
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
         String token = authHeader.substring(7);
+
         try {
 
             AuthEnum.TokenValidationResult result = jwtHandler.validateToken(token);
-            if (result == AuthEnum.TokenValidationResult.INVALID) {
-                filterChain.doFilter(request, response);
-                return;
-            }
+
             if (result == AuthEnum.TokenValidationResult.EXPIRED) {
-                response.setStatus(HttpServletResponse.SC_GONE);
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json;charset=UTF-8");
+                response.setHeader("Access-Control-Allow-Origin", "*");
+                response.setHeader("Access-Control-Allow-Headers", "*");
+                response.setHeader("Access-Control-Expose-Headers", "*");
+
+                response.getWriter().write("{\"error\":\"EXPIRED\"}");
                 return;
             }
+
+            if (result == AuthEnum.TokenValidationResult.INVALID) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json;charset=UTF-8");
+                response.setHeader("Access-Control-Allow-Origin", "*");
+                response.setHeader("Access-Control-Allow-Headers", "*");
+                response.setHeader("Access-Control-Expose-Headers", "*");
+                response.getWriter().write("{\"error\":\"INVALID\"}");
+                return;
+            }
+
             String email = jwtHandler.extractSubject(token);
 
             if (email == null || email.isBlank()) {
                 filterChain.doFilter(request, response);
+                return; // IMPORTANT
             }
 
             UserDetails user = userDetailsService.loadUserByUsername(email);
@@ -57,13 +73,24 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(user, null,
                     user.getAuthorities());
 
-            // Put it in security context
             SecurityContextHolder.getContext().setAuthentication(authToken);
 
             filterChain.doFilter(request, response);
 
         } catch (Exception ex) {
-            // Log, Unauthenticated..
+            ex.printStackTrace();
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("text/plain");
+            response.getWriter().write("UNAUTHORIZED");
         }
     }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+
+        return path.startsWith("/auth/")
+                || path.startsWith("/user/");
+    }
+
 }
