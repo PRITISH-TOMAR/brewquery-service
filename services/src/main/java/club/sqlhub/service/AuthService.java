@@ -1,22 +1,29 @@
 package club.sqlhub.service;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import ch.qos.logback.core.subst.Token;
 import club.sqlhub.Repository.UserRepository;
 import club.sqlhub.constants.AppConstants;
 import club.sqlhub.constants.MessageConstants;
 import club.sqlhub.entity.user.DBO.UserDetailsDBO;
 import club.sqlhub.entity.utlities.EmailVerifyDTO;
 import club.sqlhub.entity.utlities.OTPDBO;
+import club.sqlhub.entity.utlities.TokenDBO;
+import club.sqlhub.entity.utlities.enums.AuthEnum.TokenValidationResult;
 import club.sqlhub.queries.UserQueries;
 import club.sqlhub.utils.APiResponse.ApiResponse;
+import club.sqlhub.utils.Auth.JWTHandler;
 import club.sqlhub.utils.Auth.OtpHandler;
+import jakarta.mail.Message;
 import lombok.AllArgsConstructor;
 
 @Service
@@ -27,6 +34,7 @@ public class AuthService {
     private final OtpHandler otpHandler;
     private final UserQueries userQueries;
     private final UserRepository userRepository;
+    private final JWTHandler jwtHandler;
 
     public boolean checkCooldownForEmail(String email) {
 
@@ -99,6 +107,27 @@ public class AuthService {
             return ApiResponse.call(HttpStatus.OK, MessageConstants.OTP_VERIFIED_SUCCESSFULLY,
                     response);
 
+        } catch (Exception e) {
+            return ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, MessageConstants.INTERNAL_SERVER_ERROR,
+                    e);
+        }
+    }
+
+    public ResponseEntity<ApiResponse<TokenDBO>> refreshToken(String refreshAccessToken) {
+
+        try {
+
+            TokenValidationResult validationResult = jwtHandler.validateToken(refreshAccessToken);
+            if (validationResult == TokenValidationResult.VALID) {
+                String subject = jwtHandler.extractSubject(refreshAccessToken);
+                String newAccessToken = jwtHandler.generateToken(subject);
+
+                TokenDBO tokenDbo = new TokenDBO();
+                tokenDbo.setAccessToken(newAccessToken);
+
+                return ApiResponse.call(HttpStatus.OK, MessageConstants.REFRESH_TOKEN_GENERATED, tokenDbo);
+            }
+            return ApiResponse.call(HttpStatus.UNAUTHORIZED, MessageConstants.REFRESH_TOKEN_EXPIRED);
         } catch (Exception e) {
             return ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, MessageConstants.INTERNAL_SERVER_ERROR,
                     e);
