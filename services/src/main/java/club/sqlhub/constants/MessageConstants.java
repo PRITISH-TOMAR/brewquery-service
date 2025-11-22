@@ -19,5 +19,6 @@ public class MessageConstants {
     public static String REFRESH_TOKEN_EXPIRED = "REFRESH_TOKEN_EXPIRED";
     public static String LINK_SENT_TO_EMAIL = "LINK_SENT_TO_EMAIL";
     public static String PASSWORD_RESET_SUCCESSFULLY = "PASSWORD RESET SUCCESSFULLY";
-    public static String  RESET_LINK_EXPIRED = "RESET_LINK_EXPIRED";
+    public static String RESET_LINK_EXPIRED = "RESET_LINK_EXPIRED";
+    public static String RESET_LINK_VALID = "RESET LINK VALID";
 }

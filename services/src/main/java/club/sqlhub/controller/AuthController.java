@@ -7,6 +7,7 @@ import club.sqlhub.entity.user.DTO.RegisterUserDTO;
 import club.sqlhub.entity.user.DTO.ResetPasswordDTO;
 import club.sqlhub.entity.user.DTO.UserDetailsDTO;
 import club.sqlhub.entity.user.DTO.UserLoginDTO;
+import club.sqlhub.entity.user.DTO.ResetPasswordDTO.ForgotPasswordDTO;
 import club.sqlhub.entity.utlities.EmailVerifyDTO;
 import club.sqlhub.entity.utlities.OTPDBO;
 import club.sqlhub.entity.utlities.TokenDBO;
@@ -47,13 +48,18 @@ public class AuthController {
         return authService.refreshToken(refreshAccessToken);
     }
 
-    @GetMapping("/forgot-password/{email}")
-    public ResponseEntity<ApiResponse<String>> forgotPassword(@Valid @PathVariable String email) {
-        return authService.forgotPassword(email);
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<String>> forgotPassword(@Valid @RequestBody ForgotPasswordDTO dto ) {
+        return authService.forgotPassword(dto.getEmail());
     }
 
     @PostMapping("/reset-password")
     public ResponseEntity<ApiResponse<String>> resetPassword(@Valid @RequestBody ResetPasswordDTO data) {
         return authService.resetPassword(data);
+    }
+
+    @GetMapping("/reset-ping/{resetKey}")
+    public ResponseEntity<ApiResponse<String>> resetPasswordPing(@Valid @PathVariable String resetKey) {
+        return authService.resetPasswordPing(resetKey);
     }
 }

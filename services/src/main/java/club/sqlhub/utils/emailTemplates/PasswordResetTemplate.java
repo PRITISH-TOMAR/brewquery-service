@@ -10,7 +10,7 @@ public class PasswordResetTemplate {
   private String appDomain;
 
   public String getPasswordResetTemplate(String resetKey) {
-    String resetLink =  appDomain + "/" + resetKey;
+    String resetLink =  appDomain + "/credentials/" + resetKey;
 
     return """
         <div style="font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9;">

@@ -40,8 +40,8 @@ public class OtpHandler {
         return AppConstants.PASSWORD_RESET_KEY + email;
     }
 
-    public String passwordResetLimitKey(String email) {
-        return AppConstants.PASSWORD_RESET_LIMIT_KEY;
+    public String passwordResetLimitKey(String resetKey) {
+        return AppConstants.PASSWORD_RESET_LIMIT_KEY + resetKey;
     }
 
     public String generateUuidForEmailVerification(String email) {

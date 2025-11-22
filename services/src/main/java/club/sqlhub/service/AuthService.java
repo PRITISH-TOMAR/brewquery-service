@@ -65,9 +65,8 @@ public class AuthService {
 
             UserDetailsDTO createdUser = authRepository.addUser(
                     newUser,
-                 queries.INSERT_USER_DETAILS,
-                 queries.GET_LAST_INSERTED_USER
-            );
+                    queries.INSERT_USER_DETAILS,
+                    queries.GET_LAST_INSERTED_USER);
 
             return ApiResponse.call(HttpStatus.CREATED,
                     MessageConstants.USER_CREATED_SUCCESSFULLY,
@@ -81,8 +80,7 @@ public class AuthService {
 
     public ResponseEntity<ApiResponse<UserJWTDetailsDBO>> loginUser(UserLoginDTO user) {
         try {
-            List<UserDetailsDBO> existUser =
-                    authRepository.userExists(user.getEmail(), queries.IF_USER_EXISTS);
+            List<UserDetailsDBO> existUser = authRepository.userExists(user.getEmail(), queries.IF_USER_EXISTS);
 
             if (existUser.isEmpty()) {
                 return ApiResponse.call(HttpStatus.NOT_FOUND, MessageConstants.USER_NOT_FOUND);
@@ -91,16 +89,14 @@ public class AuthService {
             boolean validPassword = userHandler.validPassword(
                     user.getPassword(),
                     existUser.get(0).getHashedPassword(),
-                    existUser.get(0).getSalt()
-            );
+                    existUser.get(0).getSalt());
 
             if (!validPassword)
                 return ApiResponse.call(HttpStatus.NOT_FOUND, MessageConstants.USER_NOT_FOUND);
 
             String subject = existUser.get(0).getEmail();
 
-            UserJWTDetailsDBO resUser =
-                    jwtHandler.buildUserJWTDetails(subject, existUser.get(0), user.getRememberMe());
+            UserJWTDetailsDBO resUser = jwtHandler.buildUserJWTDetails(subject, existUser.get(0), user.getRememberMe());
 
             return ApiResponse.call(HttpStatus.OK,
                     MessageConstants.USER_LOGIN_SUCCESSFULLY, resUser);
@@ -131,8 +127,7 @@ public class AuthService {
 
     public ResponseEntity<ApiResponse<OTPDBO>> sendOTP(String email) {
         try {
-            List<UserDetailsDBO> existUser =
-                    authRepository.userExists(email, queries.IF_USER_EXISTS);
+            List<UserDetailsDBO> existUser = authRepository.userExists(email, queries.IF_USER_EXISTS);
 
             if (!existUser.isEmpty()) {
                 return ApiResponse.call(HttpStatus.CONFLICT, MessageConstants.USER_ALREADY_EXISTS);
@@ -151,8 +146,7 @@ public class AuthService {
             emailService.sendEmail(
                     email,
                     AppConstants.EMAIL_SUBJECT_OTP,
-                    OTPTemplate.getOtpHtmlTemplate(otp)
-            );
+                    OTPTemplate.getOtpHtmlTemplate(otp));
 
             return ApiResponse.call(HttpStatus.OK, MessageConstants.OTP_SENT_SUCCESSFULLY);
 
@@ -161,7 +155,6 @@ public class AuthService {
                     MessageConstants.INTERNAL_SERVER_ERROR, ex);
         }
     }
-
 
     public ResponseEntity<ApiResponse<EmailVerifyDTO>> verifyOTP(OTPDBO otpdbo) {
         try {
@@ -177,16 +170,13 @@ public class AuthService {
 
             redisTemplate.delete(otpKey);
 
-            String emailVerificationKey =
-                    otpHandler.emailVerificationKey(
-                            otpHandler.generateUuidForEmailVerification(otpdbo.getEmail())
-                    );
+            String emailVerificationKey = otpHandler.emailVerificationKey(
+                    otpHandler.generateUuidForEmailVerification(otpdbo.getEmail()));
 
             redisTemplate.opsForValue().set(
                     emailVerificationKey,
                     otpdbo.getEmail(),
-                    Duration.ofMinutes(AppConstants.OTP_TTL_MINUTES)
-            );
+                    Duration.ofMinutes(AppConstants.OTP_TTL_MINUTES));
 
             EmailVerifyDTO response = new EmailVerifyDTO();
             response.setKey(emailVerificationKey);
@@ -203,8 +193,7 @@ public class AuthService {
 
     public ResponseEntity<ApiResponse<TokenDBO>> refreshToken(String refreshAccessToken) {
         try {
-            TokenValidationResult validationResult =
-                    jwtHandler.validateToken(refreshAccessToken);
+            TokenValidationResult validationResult = jwtHandler.validateToken(refreshAccessToken);
 
             if (validationResult == TokenValidationResult.VALID) {
                 String subject = jwtHandler.extractSubject(refreshAccessToken);
@@ -227,15 +216,14 @@ public class AuthService {
         }
     }
 
-    public boolean checkCooldownForEmailFOrPasswordReset(String email) {
-        String limitKey = otpHandler.passwordResetLimitKey(email);
+    public boolean checkCooldownForEmailFOrPasswordReset(String resetKey) {
+        String limitKey = otpHandler.passwordResetLimitKey(resetKey);
         Integer count = (Integer) redisTemplate.opsForValue().get(limitKey);
 
         if (count == null) {
             redisTemplate.opsForValue().set(
                     limitKey, 1,
-                    Duration.ofMinutes(AppConstants.PASSWORD_RESET_WINDOW_MINUTES)
-            );
+                    Duration.ofMinutes(AppConstants.PASSWORD_RESET_WINDOW_MINUTES));
             return true;
         }
 
@@ -249,8 +237,7 @@ public class AuthService {
 
     public ResponseEntity<ApiResponse<String>> forgotPassword(String email) {
         try {
-            List<UserDetailsDBO> existUser =
-                    authRepository.userExists(email, queries.IF_USER_EXISTS);
+            List<UserDetailsDBO> existUser = authRepository.userExists(email, queries.IF_USER_EXISTS);
 
             if (existUser.isEmpty()) {
                 return ApiResponse.call(HttpStatus.OK, MessageConstants.LINK_SENT_TO_EMAIL);
@@ -260,17 +247,16 @@ public class AuthService {
                 return ApiResponse.call(HttpStatus.FORBIDDEN, MessageConstants.TOO_MANY_REQUESTS);
             }
 
-            String resetKey = otpHandler.generateUuidForResetPasswordEmail(email);
-            String passwordResetKey = otpHandler.passwordResetKey(email);
+            String keyGenerated = otpHandler.generateUuidForResetPasswordEmail(email);
+            String resetKey = otpHandler.passwordResetKey(keyGenerated);
 
-            redisTemplate.opsForValue().set(passwordResetKey, resetKey,
+            redisTemplate.opsForValue().set(resetKey, email,
                     Duration.ofMinutes(AppConstants.OTP_TTL_MINUTES));
 
             emailService.sendEmail(
                     email,
                     AppConstants.EMAIL_SUBJECT_PASSWORD_RESET,
-                    passwordResetTemplate.getPasswordResetTemplate(resetKey)
-            );
+                    passwordResetTemplate.getPasswordResetTemplate(keyGenerated));
 
             return ApiResponse.call(HttpStatus.OK, MessageConstants.LINK_SENT_TO_EMAIL);
 
@@ -282,17 +268,12 @@ public class AuthService {
 
     public ResponseEntity<ApiResponse<String>> resetPassword(ResetPasswordDTO data) {
         try {
-            String resetKey = otpHandler.passwordResetKey(data.getEmail());
-            String storedResetKey = (String) redisTemplate.opsForValue().get(resetKey);
+            String resetKey = otpHandler.passwordResetKey(data.getKey());
+            String storedEmail = (String) redisTemplate.opsForValue().get(resetKey);
 
-            if (storedResetKey == null) {
+            if (storedEmail == null) {
                 return ApiResponse.call(HttpStatus.BAD_REQUEST, MessageConstants.RESET_LINK_EXPIRED);
             }
-            if (!storedResetKey.equals(data.getKey())) {
-                return ApiResponse.call(HttpStatus.BAD_REQUEST, MessageConstants.INVALID_OTP);
-            }
-
-            redisTemplate.delete(resetKey);
 
             String salt = userHandler.generateSalt();
             String hashedPassword = userHandler.hashPassword(data.getPassword(), salt);
@@ -300,11 +281,27 @@ public class AuthService {
             UserDetailsDBO user = new UserDetailsDBO();
             user.setHashedPassword(hashedPassword);
             user.setSalt(salt);
-            user.setEmail(data.getEmail());
+            user.setEmail(storedEmail);
 
             authRepository.resetPassword(user, queries.RESET_PASSWORD_QUERY);
-
+            redisTemplate.delete(resetKey);
             return ApiResponse.call(HttpStatus.OK, MessageConstants.PASSWORD_RESET_SUCCESSFULLY);
+
+        } catch (Exception e) {
+            return ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR,
+                    MessageConstants.INTERNAL_SERVER_ERROR, e);
+        }
+    }
+
+    public ResponseEntity<ApiResponse<String>> resetPasswordPing(String key) {
+        try {
+            String resetKey = otpHandler.passwordResetKey(key);
+            String storedEmail = (String) redisTemplate.opsForValue().get(resetKey);
+
+            if (storedEmail == null) {
+                return ApiResponse.call(HttpStatus.GONE, MessageConstants.RESET_LINK_EXPIRED);
+            }
+            return ApiResponse.call(HttpStatus.OK, MessageConstants.RESET_LINK_VALID);
 
         } catch (Exception e) {
             return ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR,
