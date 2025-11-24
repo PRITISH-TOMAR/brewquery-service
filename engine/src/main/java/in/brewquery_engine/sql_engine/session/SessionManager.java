@@ -4,16 +4,18 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Component;
 
+import in.brewquery_engine.entities.DatasetSessionDTO;
+
 @Component
 public class SessionManager {
     
-    private final ConcurrentHashMap<String, DatasetSession> sessions  = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, DatasetSessionDTO> sessions  = new ConcurrentHashMap<>();
 
-    public void saveSession(DatasetSession session){
+    public void saveSession(DatasetSessionDTO session){
         sessions.put(session.getSessionId(), session);
     }
 
-    public DatasetSession getSession(String sessionId){
+    public DatasetSessionDTO getSession(String sessionId){
         return sessions.get(sessionId);
     }
 
