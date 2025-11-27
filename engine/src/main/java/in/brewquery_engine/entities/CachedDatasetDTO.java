@@ -7,8 +7,8 @@ import lombok.Data;
 
 @Data
 public class CachedDatasetDTO {
-    private List<String> schemaStatements;
-    private List<String> insertStatements;
+    private String schemaStatements;
+    private String insertStatements;
 
     private Map<Integer, String> questions;
     private Map<Integer, String> solutions;

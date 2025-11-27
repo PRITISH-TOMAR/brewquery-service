@@ -17,9 +17,10 @@ public class H2ConnectionFactory {
         String url = "jdbc:h2:mem:" + sessionId +
                 ";MODE=" + normalizedMode +
                 ";DB_CLOSE_DELAY=-1" +
-                ";DB_CLOSE_ON_EXIT=FALSE" +
+                ";DB_CLOSE_ON_EXIT=TRUE" +
                 ";TRACE_LEVEL_FILE=0" +
-                ";TRACE_LEVEL_SYSTEM_OUT=0";
+                ";TRACE_LEVEL_SYSTEM_OUT=0"+
+                ";DATABASE_TO_UPPER=false";
 
         Properties props = new Properties();
         props.setProperty("user", "sa");
