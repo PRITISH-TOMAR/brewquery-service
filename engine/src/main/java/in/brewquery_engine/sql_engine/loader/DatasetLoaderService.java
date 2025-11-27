@@ -52,7 +52,7 @@ public class DatasetLoaderService {
             sqlBatchExecutor.run(conn, cached.getSchemaStatements());
             sqlBatchExecutor.run(conn, cached.getInsertStatements());
 
-            sessionManager.saveSession(sessionId, datasetId);
+            sessionManager.saveSession(sessionId, datasetId, conn);
             session.setLastAccessTime(LocalDateTime.now());
             return ApiResponse.call(
                     HttpStatus.OK,
