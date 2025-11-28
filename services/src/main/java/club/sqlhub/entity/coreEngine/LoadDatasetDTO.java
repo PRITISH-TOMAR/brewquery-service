@@ -21,6 +21,6 @@ public class LoadDatasetDTO {
         private String sqlMode;
         private LocalDateTime lastAccessTime;
         private String message;
-        private HttpStatusCode status;
+        private Integer status;
     }
 }

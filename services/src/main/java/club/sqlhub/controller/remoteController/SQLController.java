@@ -2,6 +2,8 @@ package club.sqlhub.controller.remoteController;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,8 +26,9 @@ public class SQLController {
     private final SQLRemoteService service;
 
     @PostMapping("/load")
-    public ResponseEntity<ApiResponse<LoadDatasetOutputDTO>> loadDataset(@RequestBody LoadDatasetInputDTO object) {
-        return service.loadDataset(object);
+    public ResponseEntity<ApiResponse<LoadDatasetOutputDTO>> loadDataset(@RequestBody LoadDatasetInputDTO object, @AuthenticationPrincipal UserDetails user) {
+        
+        return service.loadDataset(object, user.getUsername());
     }
 
     @PostMapping("/execute")

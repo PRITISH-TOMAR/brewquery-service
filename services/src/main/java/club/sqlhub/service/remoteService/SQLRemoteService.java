@@ -1,8 +1,8 @@
 package club.sqlhub.service.remoteService;
 
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import club.sqlhub.Repository.remoteRepository.SQLRemoteRepository;
 import club.sqlhub.entity.coreEngine.ExecuteQueryDTO.CompareQueryDTO;
@@ -27,8 +27,8 @@ public class SQLRemoteService {
     private final QuestionService questionService;
     private final SQLRemoteRepository repository;
 
-    public ResponseEntity<ApiResponse<LoadDatasetOutputDTO>> loadDataset(LoadDatasetInputDTO obj) {
-        LoadDatasetOutputDTO payload = repository.outputFromLoadDataset(obj);
+    public ResponseEntity<ApiResponse<LoadDatasetOutputDTO>> loadDataset(LoadDatasetInputDTO obj, String userName) {
+        LoadDatasetOutputDTO payload = repository.outputFromLoadDataset(obj, userName);
         return ApiResponse.call(HttpStatus.CREATED, "OK", payload);
     }
 
