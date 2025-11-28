@@ -1,6 +1,7 @@
 package club.sqlhub.mongo.models;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -17,9 +18,22 @@ public class ExpectedSolution {
     private String questionId;
     private String datasetId;
     private String sqlMode;
-    private String solutionQuery;
 
-    private String resultHash;
+    private List<SolutionEntry> solutions;
 
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Data
+    public static class SolutionEntry {
+        private String solutionQuery;
+        private String resultHash;
+        private OutputData expectedOutput;
+    }
+
+    @Data
+    public static class OutputData {
+        private List<String> columns;
+        private List<List<Object>> rows;
+        private Integer rowsCount;
+    }
 }

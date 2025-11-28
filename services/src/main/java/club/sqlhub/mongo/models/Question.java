@@ -20,6 +20,6 @@ public class Question {
     private String question;
     private String difficulty;
     private List<String> tags;
-
+    private String type;
     private LocalDateTime createdAt = LocalDateTime.now();
 }

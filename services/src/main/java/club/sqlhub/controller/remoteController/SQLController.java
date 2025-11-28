@@ -7,6 +7,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import club.sqlhub.entity.coreEngine.ExecuteQueryDTO.EngineQueryResponseDTO;
+import club.sqlhub.entity.coreEngine.ExecuteQueryDTO.QueryRequestInputDTO;
+import club.sqlhub.entity.coreEngine.LoadDatasetDTO.LoadDatasetInputDTO;
+import club.sqlhub.entity.coreEngine.LoadDatasetDTO.LoadDatasetOutputDTO;
 import club.sqlhub.service.remoteService.SQLRemoteService;
 import club.sqlhub.utils.APiResponse.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -16,17 +20,17 @@ import lombok.RequiredArgsConstructor;
 @PreAuthorize("hasRole('USER')")
 @RequiredArgsConstructor
 public class SQLController {
-    
+
     private final SQLRemoteService service;
 
     @PostMapping("/load")
-    public ResponseEntity<ApiResponse<Object>> loadDataset(@RequestBody Object object){
-        return service.post("/sql/load", object);
+    public ResponseEntity<ApiResponse<LoadDatasetOutputDTO>> loadDataset(@RequestBody LoadDatasetInputDTO object) {
+        return service.loadDataset(object);
     }
 
     @PostMapping("/execute")
-    public ResponseEntity<ApiResponse<Object>> executeQuery(@RequestBody Object object){
-        return service.post("/sql/execute", object);
+    public ResponseEntity<ApiResponse<EngineQueryResponseDTO>> executeQuery(@RequestBody QueryRequestInputDTO object) {
+        return service.executeQuery(object);
     }
 
 }

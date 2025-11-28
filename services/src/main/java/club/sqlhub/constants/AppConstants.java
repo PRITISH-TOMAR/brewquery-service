@@ -31,4 +31,8 @@ public class AppConstants {
     // EMAIL TEMPLATES SUBJECT
     public static  String EMAIL_SUBJECT_OTP = "OTP for Email Verification";
     public static  String EMAIL_SUBJECT_PASSWORD_RESET = "Password Reset Link";
+
+    // Remote API's links
+    public static final String LOAD_DATASET = "/sql/load";
+    public static final String EXECUTE_SQL = "/sql/execute";
 }
