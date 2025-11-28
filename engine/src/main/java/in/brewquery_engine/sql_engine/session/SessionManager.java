@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,8 @@ import org.springframework.stereotype.Component;
 
 import in.brewquery_engine.constants.StorageConstants;
 import in.brewquery_engine.entities.DatasetSessionDTO;
+import in.brewquery_engine.entities.SessionDTO;
+import jakarta.annotation.PostConstruct;
 
 @Component
 public class SessionManager {
@@ -51,16 +54,35 @@ public class SessionManager {
         return false;
     }
 
+    public Connection getConnection(String sessionId) {
+        return activeSessions.get(sessionId);
+    }
+
     public Map<String, Connection> getActiveSessions() {
         return activeSessions;
     }
 
-    @Scheduled(fixedRate = 3600000) // every 1 hour
+    @Scheduled(fixedRate = 3600000)
     public void cleanupExpiredSessions() {
         for (String sessionId : getActiveSessions().keySet()) {
             if (!hasSession(sessionId)) {
                 deleteSession(sessionId);
             }
+        }
+    }
+
+    @PostConstruct
+    public void clearSessionsOnStartup() {
+        try {
+            Set<String> sessionKeys = redis.keys("session:*");
+            if (sessionKeys != null && !sessionKeys.isEmpty()) {
+                redis.delete(sessionKeys);
+                System.out.println("Cleared " + sessionKeys.size() + " sessions on server restart");
+            } else {
+                System.out.println("No sessions to clear on startup");
+            }
+        } catch (Exception e) {
+            System.err.println("Error clearing sessions on startup: " + e.getMessage());
         }
     }
 }

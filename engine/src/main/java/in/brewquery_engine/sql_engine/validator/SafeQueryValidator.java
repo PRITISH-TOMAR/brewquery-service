@@ -12,7 +12,7 @@ import net.sf.jsqlparser.statement.alter.Alter;
 
 public class SafeQueryValidator {
 
-    public boolean validateQuery(String query, String type) {
+    public static boolean validateQuery(String query, String type) {
 
         if (query == null)
             return false;

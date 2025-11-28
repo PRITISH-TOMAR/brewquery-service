@@ -16,7 +16,7 @@ public class H2ConnectionFactory {
 
         String url = "jdbc:h2:mem:" + sessionId +
                 ";MODE=" + normalizedMode +
-                ";DB_CLOSE_DELAY=-1" +
+                ";DB_CLOSE_DELAY=0" +
                 ";DB_CLOSE_ON_EXIT=TRUE" +
                 ";TRACE_LEVEL_FILE=0" +
                 ";TRACE_LEVEL_SYSTEM_OUT=0"+

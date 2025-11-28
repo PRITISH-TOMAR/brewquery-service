@@ -32,19 +32,9 @@ public class DatasetCacheManager {
 
         CachedDatasetDTO dto = new CachedDatasetDTO();
 
-        dto.setSchemaStatements(fileLoader.loadSqlFile(basePath, datasetId, "schema.sql"));
-        dto.setInsertStatements(fileLoader.loadSqlFile(basePath, datasetId, "inserts.sql"));
+        dto.setSchemaStatements(fileLoader.loadSqlFile(basePath, datasetId, datasetId + "_schema.sql"));
+        dto.setInsertStatements(fileLoader.loadSqlFile(basePath, datasetId, datasetId + "_inserts.sql"));
 
-        // String qJson = fileLoader.loadJsonFile(basePath, datasetId, "questions.json");
-        // Map<Integer, String> questions = mapper.readValue(qJson, new TypeReference<Map<Integer, String>>() {
-        // });
-
-        // String sJson = fileLoader.loadJsonFile(basePath, datasetId, "solutions.json");
-        // Map<Integer, String> solutions = mapper.readValue(sJson, new TypeReference<Map<Integer, String>>() {
-        // });
-
-        // dto.setQuestions(questions);
-        // dto.setSolutions(solutions);
         cache.put(datasetId, dto);
         return dto;
 
