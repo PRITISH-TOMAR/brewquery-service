@@ -21,4 +21,7 @@ public class MessageConstants {
     public static String PASSWORD_RESET_SUCCESSFULLY = "PASSWORD RESET SUCCESSFULLY";
     public static String RESET_LINK_EXPIRED = "RESET_LINK_EXPIRED";
     public static String RESET_LINK_VALID = "RESET LINK VALID";
+    public static String OK = "OK";
+    public static String DATASET_NOT_FOUND = "DATASET NOT FOUND";
+    public static String NO_QUESTION_FOUND_FOR_THIS_DATASET = "NO QUESTION FOUND FOR THIS DATASET";
 }

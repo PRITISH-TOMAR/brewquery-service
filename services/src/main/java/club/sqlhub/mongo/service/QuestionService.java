@@ -1,10 +1,15 @@
 package club.sqlhub.mongo.service;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import club.sqlhub.constants.MessageConstants;
 import club.sqlhub.mongo.models.Question;
 import club.sqlhub.mongo.repository.QuestionRepository;
+import club.sqlhub.utils.APiResponse.ApiResponse;
 
 import java.util.List;
 
@@ -18,8 +23,19 @@ public class QuestionService {
         return repo.findById(id).orElse(null);
     }
 
-    public List<Question> getByDataset(String datasetId) {
-        return repo.findByDatasetId(datasetId);
+    public ResponseEntity<ApiResponse<List<Question>>> getByDataset(String datasetId) {
+        try {
+            List<Question> res = repo.findByDatasetId(datasetId);
+
+            if (res.isEmpty()) {
+                return ApiResponse.error(HttpStatus.NOT_FOUND, MessageConstants.NO_QUESTION_FOUND_FOR_THIS_DATASET, null);
+            }
+
+
+            return ApiResponse.call(HttpStatus.OK, MessageConstants.OK, res);
+        } catch (Exception e) {
+            return ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, MessageConstants.INTERNAL_SERVER_ERROR, e);
+        }
     }
 
     public Question create(Question question) {
