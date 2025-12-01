@@ -52,8 +52,8 @@ public class ApiResponse<T> {
         return ResponseEntity.status(httpStatus).body(apiResponse);
     }
 
-    public static <T> ResponseEntity<ApiResponse<T>> call(HttpStatus httpStatus, String message, List<T> dataList) {
-        ApiResponse<T> apiResponse = new ApiResponse<>(httpStatus, message, dataList);
+    public static <T> ResponseEntity<ApiResponse<List<T>>> call(HttpStatus httpStatus, String message, List<T> dataList) {
+        ApiResponse<List<T>> apiResponse = new ApiResponse<>(httpStatus, message, dataList);
         return ResponseEntity.status(httpStatus).body(apiResponse);
     }
 
