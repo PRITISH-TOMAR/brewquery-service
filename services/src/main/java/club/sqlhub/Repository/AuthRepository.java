@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 
 import club.sqlhub.constants.MessageConstants;
 import club.sqlhub.entity.user.DBO.UserDetailsDBO;
-import club.sqlhub.entity.user.DTO.ResetPasswordDTO;
 import club.sqlhub.entity.user.DTO.UserDetailsDTO;
 import lombok.RequiredArgsConstructor;
 

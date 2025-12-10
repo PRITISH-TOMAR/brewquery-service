@@ -23,11 +23,9 @@ import io.jsonwebtoken.security.Keys;
 @Component
 public class JWTHandler {
 
-    private final Dotenv dotenv;
     private final String JWT_SECRET_KEY;
 
     public JWTHandler(Dotenv dotenv) {
-        this.dotenv = dotenv;
         this.JWT_SECRET_KEY = dotenv.get("JWT_SECRET_KEY");
     }
 

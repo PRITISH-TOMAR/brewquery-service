@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import club.sqlhub.utils.APiResponse.ApiResponse;
@@ -14,54 +15,102 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class SQLRemoteApiHelper {
-        private final WebClient client;
 
-        public ResponseEntity<ApiResponse<Object>> post(String uri, Object body) {
-                try {
-                        ApiResponse<?> raw = client.post()
-                                        .uri(uri)
-                                        .bodyValue(body)
-                                        .retrieve()
-                                        .bodyToMono(ApiResponse.class)
-                                        .block();
+    private final WebClient client;
+    private final ObjectMapper mapper = new ObjectMapper();
 
-                        if (raw == null) {
-                                return ApiResponse.call(
-                                                HttpStatus.INTERNAL_SERVER_ERROR,
-                                                "Null response from engine");
-                        }
+    public ResponseEntity<ApiResponse<Object>> post(String uri, Object body) {
 
-                        return ApiResponse.call(
-                                        HttpStatus.valueOf(raw.getStatus()),
-                                        raw.getMessage(),
-                                        raw.getData());
+        try {
+            // -----------------------------------------
+            // SUCCESS RESPONSE
+            // -----------------------------------------
+            String rawJson = client.post()
+                    .uri(uri)
+                    .bodyValue(body)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
 
-                } catch (WebClientResponseException e) {
-                        // Try to parse the error response body as ApiResponse
-                        try {
-                                ObjectMapper mapper = new ObjectMapper();
-                                ApiResponse<?> errorResponse = mapper.readValue(
-                                                e.getResponseBodyAsString(),
-                                                ApiResponse.class);
+            if (rawJson == null) {
+                return ApiResponse.call(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "Runner returned NULL response");
+            }
 
-                                return ApiResponse.call(
-                                                HttpStatus.valueOf(errorResponse.getStatus()),
-                                                errorResponse.getMessage(),
-                                                errorResponse.getData());
+            // Try reading ApiResponse cleanly
+            try {
+                ApiResponse<?> parsed = mapper.readValue(rawJson, ApiResponse.class);
+                return ApiResponse.call(
+                        HttpStatus.valueOf(parsed.getStatus()),
+                        parsed.getMessage(),
+                        parsed.getData()
+                );
+            } catch (Exception ignore) {
+                // Not ApiResponse format, fall through
+            }
 
-                        } catch (Exception parseException) {
-                                // If parsing fails, use the exception's status code
-                                return ApiResponse.call(
-                                                HttpStatus.valueOf(e.getStatusCode().value()),
-                                                e.getMessage(),
-                                                e.getResponseBodyAsString());
-                        }
+            // Try generic JSON node
+            try {
+                JsonNode node = mapper.readTree(rawJson);
 
-                } catch (Exception e) {
-                        return ApiResponse.call(
-                                        HttpStatus.INTERNAL_SERVER_ERROR,
-                                        e.getMessage(),
-                                        null);
-                }
+                String message =
+                        node.has("message") ? node.get("message").asText() :
+                        node.has("error")   ? node.get("error").asText() :
+                        rawJson;
+
+                return ApiResponse.call(
+                        HttpStatus.OK,
+                        message,
+                        node
+                );
+            } catch (Exception ignore2) {
+                // Not JSON, fall through
+            }
+
+            // Plain text response
+            return ApiResponse.call(
+                    HttpStatus.OK,
+                    rawJson,
+                    rawJson
+            );
+
+        } catch (WebClientResponseException e) {
+
+            String rawBody = e.getResponseBodyAsString();
+
+            // -----------------------------------------
+            // ERROR RESPONSE
+            // -----------------------------------------
+            try {
+                JsonNode node = mapper.readTree(rawBody);
+                String message =
+                        node.has("message") ? node.get("message").asText() :
+                        node.has("error") ? node.get("error").asText() :
+                        rawBody;
+
+                return ApiResponse.call(
+                        HttpStatus.OK,
+                        message,
+                        node
+                );
+            } catch (Exception ignore) {
+                return ApiResponse.call(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        rawBody,
+                        rawBody
+                );
+            }
+
+        } catch (Exception e) {
+            // -----------------------------------------
+            // LOCAL INTERNAL ERROR
+            // -----------------------------------------
+            return ApiResponse.error(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Remote API Error: " + e.getMessage(),
+                    e
+            );
         }
+    }
 }

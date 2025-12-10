@@ -1,55 +1,67 @@
 package club.sqlhub.Repository.remoteRepository;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-
-import org.apache.commons.codec.digest.DigestUtils;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Repository;
+import org.springframework.web.client.RestTemplate;
 
-import club.sqlhub.constants.AppConstants;
-import club.sqlhub.entity.coreEngine.ExecuteQueryDTO.CompareQueryDTO;
-import club.sqlhub.entity.coreEngine.ExecuteQueryDTO.EngineQueryRequestDTO;
-import club.sqlhub.entity.coreEngine.ExecuteQueryDTO.EngineQueryResponseDTO;
-import club.sqlhub.entity.coreEngine.LoadDatasetDTO.LoadDatasetInputDTO;
-import club.sqlhub.entity.coreEngine.LoadDatasetDTO.LoadDatasetOutputDTO;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import club.sqlhub.entity.coreEngine.JudgeServerJobDTO.CompareQueryDTO;
+import club.sqlhub.entity.coreEngine.JudgeServerJobDTO.EngineQueryResponseDTO;
+import club.sqlhub.entity.coreEngine.JudgeServerJobDTO.JudgeJobPayload;
+import club.sqlhub.entity.coreEngine.JudgeServerJobDTO.JudgeResponseDTO;
+import club.sqlhub.entity.coreEngine.JudgeServerJobDTO.SubmissionStatusResponseDTO;
 import club.sqlhub.mongo.models.ExpectedSolution;
 import club.sqlhub.utils.APiResponse.ApiResponse;
-import club.sqlhub.utils.remoteServiceHelper.RemoteServiceConversions;
 import club.sqlhub.utils.remoteServiceHelper.SQLRemoteApiHelper;
 import lombok.AllArgsConstructor;
 
 @Repository
 @AllArgsConstructor
 public class SQLRemoteRepository {
+
+    private final RestTemplate restTemplate;
     private final SQLRemoteApiHelper apiHelper;
-    private final RemoteServiceConversions conversions;
+    private final ObjectMapper mapper;
+    private final String EXECUTE_SQL_URL = "http://localhost:8081/jobs";
+    private final String EXECUTE_JUDGE_URL = "http://localhost:8081/jobs/result";
 
-    public LoadDatasetOutputDTO outputFromLoadDataset(LoadDatasetInputDTO obj, String userName) {
+    public SubmissionStatusResponseDTO submitQuery(JudgeJobPayload payload) {
 
-        userName = hashUserName(userName);
-        obj.setSessionId(userName + obj.getDatasetId());
-        ResponseEntity<ApiResponse<Object>> response = apiHelper.post(AppConstants.LOAD_DATASET, obj);
+        ResponseEntity<ApiResponse<Object>> response = apiHelper.post(EXECUTE_SQL_URL, payload);
 
-        LoadDatasetOutputDTO output = conversions.extract(response.getBody(), LoadDatasetOutputDTO.class);
-
-        output.setMessage(response.getBody().getMessage());
-        output.setStatus(response.getStatusCode().value());
-        return output;
-
+        ApiResponse<Object> body = response.getBody();
+        if (body == null || body.getData() == null) {
+            SubmissionStatusResponseDTO resError = new SubmissionStatusResponseDTO();
+            resError.setStatus("Failed");
+            return resError;
+        }
+        SubmissionStatusResponseDTO desData = mapper.convertValue(body.getData(), SubmissionStatusResponseDTO.class);
+        return desData;
     }
 
-    public EngineQueryResponseDTO outputFromSQLquery(String type, EngineQueryRequestDTO payload) {
+    public JudgeResponseDTO evaluateSubmission(String type, JudgeJobPayload jobPayload) {
 
-        ResponseEntity<ApiResponse<Object>> response = apiHelper.post(AppConstants.EXECUTE_SQL, payload);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
 
-        EngineQueryResponseDTO output = conversions.extract(response.getBody(), EngineQueryResponseDTO.class);
-        output.setMessage(response.getBody().getMessage());
-        output.setStatus(response.getStatusCode().value());
-        return output;
+        HttpEntity<JudgeJobPayload> request = new HttpEntity<>(jobPayload, headers);
 
+        ResponseEntity<ApiResponse> resp = restTemplate.exchange(
+                EXECUTE_JUDGE_URL,
+                HttpMethod.POST,
+                request,
+                ApiResponse.class);
+
+        if (resp == null || resp.getBody() == null) {
+            return null;
+        }
+
+        JudgeResponseDTO result = restTemplate.getForObject(EXECUTE_JUDGE_URL, JudgeResponseDTO.class);
+
+        return result;
     }
+    
 
     public CompareQueryDTO toCompareDTO(EngineQueryResponseDTO res) {
         CompareQueryDTO dto = new CompareQueryDTO();
@@ -67,15 +79,4 @@ public class SQLRemoteRepository {
         return dto;
     }
 
-    private String hashUserName(String userName) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            String digest = md.digest(userName.getBytes(StandardCharsets.UTF_8)).toString();
-            return DigestUtils.sha256Hex(digest);
-        } catch (NoSuchAlgorithmException e) {
-
-            System.err.println("SHA-256 algorithm not available: " + e.getMessage());
-            return new byte[0].toString();
-        }
-    }
 }

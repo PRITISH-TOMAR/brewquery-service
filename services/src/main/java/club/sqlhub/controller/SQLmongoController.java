@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import club.sqlhub.entity.Datasets.DatasetPageResponseDTO;
+import club.sqlhub.entity.Datasets.ProblemDescription;
 import club.sqlhub.mongo.models.Dataset;
 import club.sqlhub.mongo.models.Question;
 import club.sqlhub.mongo.service.DatasetService;
@@ -41,5 +42,10 @@ public class SQLmongoController {
     @GetMapping("/{dbId}/problems")
     public ResponseEntity<ApiResponse<List<Question>>> getProblemsbyDbId(@PathVariable String dbId) {
         return questionService.getByDataset(dbId);
+    }
+
+    @GetMapping("/problem/{problemId}")
+    public ResponseEntity<ApiResponse<ProblemDescription>> getProblemDescriptionById(@PathVariable String problemId) {
+        return questionService.getById(problemId);
     }
 }

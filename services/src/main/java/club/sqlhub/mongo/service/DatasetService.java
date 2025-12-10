@@ -53,8 +53,7 @@ public class DatasetService {
             }
             return ApiResponse.call(HttpStatus.OK, MessageConstants.OK, dataset);
         } catch (Exception e) {
-            return ApiResponse.call(HttpStatus.INTERNAL_SERVER_ERROR, MessageConstants.INTERNAL_SERVER_ERROR);
+            return ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, MessageConstants.INTERNAL_SERVER_ERROR, e);
         }
     }
-
 }

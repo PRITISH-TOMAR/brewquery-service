@@ -1,6 +1,5 @@
 package club.sqlhub.entity.utlities;
 
-import club.sqlhub.constants.AppConstants;
 import club.sqlhub.entity.user.DTO.UserDetailsDTO;
 import lombok.Getter;
 import lombok.Setter;

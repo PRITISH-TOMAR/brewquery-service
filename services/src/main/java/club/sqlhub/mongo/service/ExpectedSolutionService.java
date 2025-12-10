@@ -13,8 +13,8 @@ public class ExpectedSolutionService {
 
     private final ExpectedSolutionRepository repo;
 
-    public ExpectedSolution getOne(String questionId, String sqlMode) {
-        return repo.findByQuestionIdAndSqlMode(questionId, sqlMode.toLowerCase())
+    public ExpectedSolution getOne(String questionId) {
+        return repo.findByQuestionId(questionId)
                 .stream()
                 .findFirst()
                 .orElse(null);
@@ -33,7 +33,7 @@ public class ExpectedSolutionService {
     }
 
     public ExpectedSolution addSolution(String questionId, String sqlMode, ExpectedSolution.SolutionEntry newEntry) {
-        ExpectedSolution sol = getOne(questionId, sqlMode);
+        ExpectedSolution sol = getOne(questionId);
 
         if (sol == null) {
             sol = new ExpectedSolution();
@@ -48,7 +48,7 @@ public class ExpectedSolutionService {
     }
 
     public ExpectedSolution updateSolutionEntry(String questionId, String sqlMode, int index, ExpectedSolution.SolutionEntry updated) {
-        ExpectedSolution sol = getOne(questionId, sqlMode);
+        ExpectedSolution sol = getOne(questionId);
         if (sol == null) return null;
 
         if (index < 0 || index >= sol.getSolutions().size()) return null;

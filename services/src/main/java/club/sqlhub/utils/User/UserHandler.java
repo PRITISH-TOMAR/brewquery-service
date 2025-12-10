@@ -5,15 +5,12 @@ import java.util.Base64;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
-import javax.management.RuntimeErrorException;
 
 import org.springframework.stereotype.Component;
 
 import club.sqlhub.constants.AppConstants;
-import club.sqlhub.constants.MessageConstants;
 import club.sqlhub.entity.user.DBO.UserDetailsDBO;
 import club.sqlhub.entity.user.DTO.RegisterUserDTO;
-import jakarta.mail.Message;
 
 @Component
 public class UserHandler {
