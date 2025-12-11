@@ -1,6 +1,5 @@
 package club.sqlhub.entity.coreEngine;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -20,20 +19,24 @@ public class JudgeServerJobDTO {
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
-    public static class EngineQueryRequestDTO {
+    public static class SubmissionStatusResponseDTO {
         private String jobId;
-        private String userId;
-        private String timestamp;
-        private String type; // SQL, C , C++, Java
-        private String payload;
+        private String status;
+        private String message;
     }
 
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
-    public static class SubmissionStatusResponseDTO {
-        private String jobId;
-        private String status;
-        private String message;
+    public static class SubmissionResponseDTO {
+        private String userId;
+        private String executionTime;
+        private String type;
+        private String questionId;
+        private String SubmissionTime;
+        private String verdict;
+        private int passCount;
+        private int totalCount;
+        private Object testDetails;
     }
 }

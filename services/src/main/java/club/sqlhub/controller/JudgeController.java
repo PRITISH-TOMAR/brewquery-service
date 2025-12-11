@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import club.sqlhub.entity.coreEngine.JudgeServerJobDTO.SubmissionResponseDTO;
 import club.sqlhub.mongo.models.JudgeResult.JudgeResultDTO;
 import club.sqlhub.service.JudgeService;
 import club.sqlhub.utils.APiResponse.ApiResponse;
@@ -26,7 +27,7 @@ public class JudgeController {
     }
 
     @GetMapping("user/{userId}")
-    public ResponseEntity<ApiResponse<List<JudgeResultDTO>>> getUserResults(
+    public ResponseEntity<ApiResponse<List<SubmissionResponseDTO>>> getUserResults(
             @PathVariable String userId) {
         return service.getUserResults(userId);
     }
