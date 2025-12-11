@@ -5,11 +5,13 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import club.sqlhub.entity.coreEngine.JudgeServerJobDTO.SubmissionResponseDTO;
-import club.sqlhub.mongo.models.JudgeResult.JudgeResultDTO;
+import club.sqlhub.entity.judge.SubmissionRequestDTO;
+import club.sqlhub.entity.judge.JudgeServerJobDTO.SubmissionResponseDTO;
 import club.sqlhub.service.JudgeService;
 import club.sqlhub.utils.APiResponse.ApiResponse;
 import lombok.AllArgsConstructor;
@@ -21,15 +23,16 @@ public class JudgeController {
     private final JudgeService service;
 
     @GetMapping("/{jobId}")
-    public ResponseEntity<ApiResponse<JudgeResultDTO>> executedExpectedQuery(
+    public ResponseEntity<ApiResponse<SubmissionResponseDTO>> executedExpectedQuery(
             @PathVariable String jobId) {
         return service.expectedOutput(jobId);
     }
 
-    @GetMapping("user/{userId}")
-    public ResponseEntity<ApiResponse<List<SubmissionResponseDTO>>> getUserResults(
-            @PathVariable String userId) {
-        return service.getUserResults(userId);
+    @PostMapping("user/{userId}")
+    public ResponseEntity<ApiResponse<List<SubmissionResponseDTO>>> findSubmissionsPerUserByFilters(
+            @PathVariable String userId, @RequestBody SubmissionRequestDTO req) {
+        req.setUserId(userId);
+        return service.findSubmissionsPerUserByFilters(req);
     }
 
 }

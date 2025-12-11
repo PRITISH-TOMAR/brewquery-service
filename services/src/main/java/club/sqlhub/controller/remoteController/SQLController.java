@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import club.sqlhub.entity.coreEngine.JudgeServerJobDTO.SubmissionStatusResponseDTO;
-import club.sqlhub.entity.coreEngine.SQLDTO.SQLInputDTO;
+import club.sqlhub.entity.judge.JudgeServerJobDTO.SubmissionStatusResponseDTO;
+import club.sqlhub.entity.judge.SQLDTO.SQLInputDTO;
 import club.sqlhub.service.remoteService.SQLRemoteService;
 import club.sqlhub.utils.APiResponse.ApiResponse;
 import lombok.RequiredArgsConstructor;

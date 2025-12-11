@@ -1,4 +1,4 @@
-package club.sqlhub.entity.coreEngine;
+package club.sqlhub.entity.judge;
 
 import java.util.List;
 

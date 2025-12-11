@@ -9,10 +9,10 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import club.sqlhub.Repository.remoteRepository.SQLRemoteRepository;
-import club.sqlhub.entity.coreEngine.JudgeServerJobDTO.JudgeJobPayload;
-import club.sqlhub.entity.coreEngine.JudgeServerJobDTO.SubmissionStatusResponseDTO;
-import club.sqlhub.entity.coreEngine.SQLDTO.SQLInputDTO;
-import club.sqlhub.entity.coreEngine.SQLDTO.SQLPayload;
+import club.sqlhub.entity.judge.JudgeServerJobDTO.JudgeJobPayload;
+import club.sqlhub.entity.judge.JudgeServerJobDTO.SubmissionStatusResponseDTO;
+import club.sqlhub.entity.judge.SQLDTO.SQLInputDTO;
+import club.sqlhub.entity.judge.SQLDTO.SQLPayload;
 import club.sqlhub.mongo.models.Question;
 import club.sqlhub.mongo.models.TestCaseSQL.TestCase;
 import club.sqlhub.mongo.service.QuestionService;

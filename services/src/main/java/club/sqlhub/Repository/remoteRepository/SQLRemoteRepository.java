@@ -5,8 +5,8 @@ import org.springframework.stereotype.Repository;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import club.sqlhub.entity.coreEngine.JudgeServerJobDTO.JudgeJobPayload;
-import club.sqlhub.entity.coreEngine.JudgeServerJobDTO.SubmissionStatusResponseDTO;
+import club.sqlhub.entity.judge.JudgeServerJobDTO.JudgeJobPayload;
+import club.sqlhub.entity.judge.JudgeServerJobDTO.SubmissionStatusResponseDTO;
 import club.sqlhub.utils.APiResponse.ApiResponse;
 import club.sqlhub.utils.remoteServiceHelper.SQLRemoteApiHelper;
 import lombok.AllArgsConstructor;

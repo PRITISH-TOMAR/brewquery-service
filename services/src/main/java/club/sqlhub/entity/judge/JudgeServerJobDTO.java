@@ -1,4 +1,4 @@
-package club.sqlhub.entity.coreEngine;
+package club.sqlhub.entity.judge;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -8,6 +8,8 @@ public class JudgeServerJobDTO {
 
     // For every job query
     @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
     public static class JudgeJobPayload {
         private String jobId;
         private String type;

@@ -4,9 +4,10 @@ import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.Map;
 
-import club.sqlhub.entity.coreEngine.JudgeServerJobDTO.SubmissionResponseDTO;
+import club.sqlhub.entity.judge.JudgeServerJobDTO.SubmissionResponseDTO;
 import club.sqlhub.mongo.models.JudgeResult.JudgeResultDTO;
 
+@SuppressWarnings("unchecked")
 public class JudgeResponseConverter {
 
     public static SubmissionResponseDTO convertJudgeResultToSubmissionResponse(JudgeResultDTO obj) {
