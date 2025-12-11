@@ -7,7 +7,6 @@ import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import club.sqlhub.entity.coreEngine.JudgeServerJobDTO.CompareQueryDTO;
-import club.sqlhub.entity.coreEngine.JudgeServerJobDTO.EngineQueryResponseDTO;
 import club.sqlhub.entity.coreEngine.JudgeServerJobDTO.JudgeJobPayload;
 import club.sqlhub.entity.coreEngine.JudgeServerJobDTO.JudgeResponseDTO;
 import club.sqlhub.entity.coreEngine.JudgeServerJobDTO.SubmissionStatusResponseDTO;
@@ -63,13 +62,7 @@ public class SQLRemoteRepository {
     }
     
 
-    public CompareQueryDTO toCompareDTO(EngineQueryResponseDTO res) {
-        CompareQueryDTO dto = new CompareQueryDTO();
-        dto.setColumns(res.getColumns());
-        dto.setRows(res.getRows());
-        dto.setRowsCount(res.getRows() == null ? 0 : res.getRows().size());
-        return dto;
-    }
+    
 
     public CompareQueryDTO toCompareDTO(ExpectedSolution.OutputData data) {
         CompareQueryDTO dto = new CompareQueryDTO();

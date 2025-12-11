@@ -14,9 +14,11 @@ import club.sqlhub.entity.coreEngine.JudgeServerJobDTO.SubmissionStatusResponseD
 import club.sqlhub.entity.coreEngine.SQLDTO.SQLInputDTO;
 import club.sqlhub.entity.coreEngine.SQLDTO.SQLPayload;
 import club.sqlhub.mongo.models.Question;
+import club.sqlhub.mongo.models.JudgeResult.JudgeResultDTO;
 import club.sqlhub.mongo.models.TestCaseSQL.TestCase;
 import club.sqlhub.mongo.service.QuestionService;
 import club.sqlhub.mongo.service.TestCaseService;
+import club.sqlhub.mongo.service.UserQueriesResultService;
 import club.sqlhub.utils.APiResponse.ApiResponse;
 import club.sqlhub.utils.remoteServiceHelper.RemoteServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,7 @@ public class SQLRemoteService {
     private final TestCaseService testCaseService;
     private final ObjectMapper objectMapper;
     private final SQLRemoteRepository sqlRemoteRepository;
+    private final UserQueriesResultService userQueriesResultService;
 
     public ResponseEntity<ApiResponse<SubmissionStatusResponseDTO>> executeQuery(
             SQLInputDTO obj,
@@ -77,4 +80,5 @@ public class SQLRemoteService {
                     ex);
         }
     }
+
 }

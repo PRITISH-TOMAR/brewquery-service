@@ -26,21 +26,4 @@ public class SQLDTO {
         private String expectedSql;
         private List<TestCase> testCases;
     }
-
-    @Data
-    public static class LoadDatasetInputDTO {
-        private String sessionId;
-        private String datasetId;
-        private String sqlMode;
-    }
-
-    @Data
-    public static class LoadDatasetOutputDTO {
-        private String sessionId;
-        private String datasetId;
-        private String sqlMode;
-        private LocalDateTime lastAccessTime;
-        private String message;
-        private Integer status;
-    }
 }
