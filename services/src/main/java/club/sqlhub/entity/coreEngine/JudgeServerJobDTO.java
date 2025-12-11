@@ -1,8 +1,10 @@
 package club.sqlhub.entity.coreEngine;
 
+import java.security.Timestamp;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.http.HttpStatus;
 
 import lombok.AllArgsConstructor;
@@ -41,16 +43,6 @@ public class JudgeServerJobDTO {
         private String message;
     }
 
-    @Data
-    public static class EngineQueryResponseDTO {
-        private List<String> columns;
-        private List<List<Object>> rows;
-        private Integer rowsCount;
-        private Integer status;
-        private String message;
-        private boolean valid;
-
-    }
 
     @Data
     @AllArgsConstructor
