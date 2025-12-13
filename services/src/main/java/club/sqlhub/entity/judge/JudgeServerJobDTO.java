@@ -1,5 +1,7 @@
 package club.sqlhub.entity.judge;
 
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -40,5 +42,16 @@ public class JudgeServerJobDTO {
         private int passCount;
         private int totalCount;
         private Object testDetails;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class RunTestcaseResponseDTO {
+        private int passedCount;
+        private int totalCount;
+        private long totalExecutionMs;
+        private String overallStatus;
+        private List<Object> testDetails;
     }
 }

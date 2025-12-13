@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import club.sqlhub.entity.Enums.TestCaseType;
 import club.sqlhub.mongo.models.TestCaseSQL.TestCase;
 import club.sqlhub.mongo.models.TestCaseSQL.TestCases;
 import club.sqlhub.mongo.repository.TestcaseRepository;
@@ -48,6 +49,13 @@ public class TestCaseService {
 
     public List<TestCase> findTestCasesByQuestionId(String questionId) {
         Optional<TestCases> result = repo.findByQuestionId(questionId);
+        return result.map(TestCases::getTestCases)
+                .orElse(Collections.emptyList());
+    }
+
+    public List<TestCase> findTestCasesByTypeAndQuestionId(TestCaseType type, String questionId) {
+       Optional<TestCases> result = repo.findTestCasesByTypeAndQuestionId(type.getDbValue(), questionId);
+
         return result.map(TestCases::getTestCases)
                 .orElse(Collections.emptyList());
     }

@@ -24,4 +24,6 @@ public class MessageConstants {
     public static String OK = "OK";
     public static String DATASET_NOT_FOUND = "DATASET NOT FOUND";
     public static String NO_QUESTION_FOUND_FOR_THIS_DATASET = "NO QUESTION FOUND FOR THIS DATASET";
+    public static String INVALID_TESTCASES = "INVALID_TESTCASES";
+    public static String INVALID_QUESTION_ID = "INVALID_QUESTION_ID";
 }

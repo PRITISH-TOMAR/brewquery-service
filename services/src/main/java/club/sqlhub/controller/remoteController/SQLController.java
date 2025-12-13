@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import club.sqlhub.entity.judge.JudgeServerJobDTO.RunTestcaseResponseDTO;
 import club.sqlhub.entity.judge.JudgeServerJobDTO.SubmissionStatusResponseDTO;
 import club.sqlhub.entity.judge.SQLDTO.SQLInputDTO;
 import club.sqlhub.service.remoteService.SQLRemoteService;
@@ -22,6 +23,11 @@ import lombok.RequiredArgsConstructor;
 public class SQLController {
 
     private final SQLRemoteService service;
+
+    @PostMapping("/run")
+    public ResponseEntity<ApiResponse<RunTestcaseResponseDTO>> runQuery(@RequestBody SQLInputDTO input, @AuthenticationPrincipal UserDetails user) {
+        return service.runQuery(input, user.getUsername());
+    }
 
     @PostMapping("/execute")
     public ResponseEntity<ApiResponse<SubmissionStatusResponseDTO>> executeQuery(

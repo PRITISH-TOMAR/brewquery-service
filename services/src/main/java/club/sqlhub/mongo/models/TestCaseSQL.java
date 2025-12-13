@@ -6,6 +6,9 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import club.sqlhub.entity.Enums.TestCaseType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,6 +25,7 @@ public class TestCaseSQL {
         private String schemaSql;
         private String seedSql;
         private Double numericTolerance;
+        private String type;
     }
 
     @Document(collection = "testcases")
@@ -30,6 +34,7 @@ public class TestCaseSQL {
         @Id
         private String id;
         private String questionId;
+        @JsonProperty("type")
         private String type;
         private String expectedSql;
         List<TestCase> testCases;

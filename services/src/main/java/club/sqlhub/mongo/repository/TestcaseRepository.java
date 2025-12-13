@@ -3,6 +3,7 @@ package club.sqlhub.mongo.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -18,6 +19,20 @@ public interface TestcaseRepository extends MongoRepository<TestCases, String> {
 
     @Query("{ 'questionId': ?0 }")
     Optional<TestCases> findByQuestionId(String questionId);
+
+    @Aggregation(pipeline = {
+        "{ $match: { 'questionId': ?1 } }",
+        "{ $project: { " +
+            "testCases: { " +
+                "$filter: { " +
+                    "input: '$testCases', " +
+                    "as: 'tc', " +
+                    "cond: { $eq: ['$$tc.type', ?0] } " +
+                "} " +
+            "} " +
+        "}}"
+    })
+    Optional<TestCases> findTestCasesByTypeAndQuestionId(String type, String questionId);
 
     @Query(value = "{ 'questionId': ?0 }", fields = "{ 'expectedSql': 1 }")
     Optional<TestCases> findExpectedSqlByQuestionId(String questionId);
