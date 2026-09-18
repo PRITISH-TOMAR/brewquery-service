@@ -23,7 +23,7 @@ CREATE TABLE user_details
     salt TEXT NOT NULL,
     last_login TIMESTAMP NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    modified_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    modified_at TIMESTAMP NULL,
     CONSTRAINT fk_user_details_role FOREIGN KEY (role_id) REFERENCES user_roles(role_id)
 );
 
