@@ -46,7 +46,6 @@ services:
   brewquery-engine:
     build:
       context: ../engine
-      dockerfile: ../tools/Dockerfile.engine
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -63,7 +62,6 @@ services:
   sqlclub-services:
     build:
       context: ../services
-      dockerfile: ../tools/Dockerfile.services
     env_file:
       - ../../.env
     environment:
