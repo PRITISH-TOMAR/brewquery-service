@@ -21,9 +21,9 @@ CREATE TABLE user_details
     profile_picture_url TEXT,
     hashed_password TEXT NOT NULL,
     salt TEXT NOT NULL,
-    last_login DATETIME,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    modified_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_login TIMESTAMP NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    modified_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_user_details_role FOREIGN KEY (role_id) REFERENCES user_roles(role_id)
 );
 
