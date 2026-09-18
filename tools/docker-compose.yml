@@ -1,0 +1,113 @@
+services:
+
+  # ── Infrastructure ──────────────────────────────────────────────
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: sqlhub
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - sqlhub-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mongodb:
+    image: mongo:7
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - sqlhub-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    networks:
+      - sqlhub-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend services ─────────────────────────────────────────────
+
+  brewquery-engine:
+    build:
+      context: ../engine
+      dockerfile: ../tools/Dockerfile.engine
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    volumes:
+      - datasets:/mnt/brewquery/datasets
+    ports:
+      - "8081:8081"
+    networks:
+      - sqlhub-net
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  sqlclub-services:
+    build:
+      context: ../services
+      dockerfile: ../tools/Dockerfile.services
+    env_file:
+      - ../../.env
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      ENGINE_BASE_URL: http://brewquery-engine:8081
+      JUDGE_EXECUTE_URL: http://brewquery-engine:8081/jobs
+      JUDGE_RUN_TESTCASES_URL: http://brewquery-engine:8081/jobs/test
+    ports:
+      - "8080:8080"
+    networks:
+      - sqlhub-net
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      brewquery-engine:
+        condition: service_started
+
+  # ── Frontend ─────────────────────────────────────────────────────
+
+  sqlbrew-app:
+    build:
+      context: ../../sqlbrew-app
+      args:
+        VITE_API_BASE_URL: http://localhost:8080
+    ports:
+      - "3000:80"
+    networks:
+      - sqlhub-net
+    depends_on:
+      - sqlclub-services
+
+# ── Volumes & Networks ───────────────────────────────────────────
+
+volumes:
+  mysql-data:
+  mongo-data:
+  redis-data:
+  datasets:
+
+networks:
+  sqlhub-net:
+    driver: bridge
