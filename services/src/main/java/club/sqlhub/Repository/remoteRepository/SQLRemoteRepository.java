@@ -1,6 +1,5 @@
 package club.sqlhub.Repository.remoteRepository;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Repository;
 
@@ -19,12 +18,8 @@ public class SQLRemoteRepository {
 
     private final SQLRemoteApiHelper apiHelper;
     private final ObjectMapper mapper;
-
-    @Value("${judge.execute-url:http://localhost:8081/jobs}")
-    private String EXECUTE_SQL_URL;
-
-    @Value("${judge.run-testcases-url:http://localhost:8081/jobs/test}")
-    private String RUN_PUBLIC_TESTCASES_URL;
+    private final String EXECUTE_SQL_URL = "http://localhost:8081/jobs";
+    private final String RUN_PUBLIC_TESTCASES_URL = "http://localhost:8081/jobs/test";
 
     public SubmissionStatusResponseDTO submitQuery(JudgeJobPayload payload) {
 
