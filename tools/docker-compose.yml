@@ -5,14 +5,15 @@ services:
   mysql:
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
       MYSQL_DATABASE: sqlhub
     volumes:
       - mysql-data:/var/lib/mysql
     networks:
       - sqlhub-net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -63,7 +64,7 @@ services:
     build:
       context: ../services
     env_file:
-      - ../../.env
+      - ../services/.env
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -75,8 +76,6 @@ services:
     networks:
       - sqlhub-net
     depends_on:
-      mysql:
-        condition: service_healthy
       mongodb:
         condition: service_healthy
       redis:
