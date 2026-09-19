@@ -65,8 +65,7 @@ public class AuthService {
 
             UserDetailsDTO createdUser = authRepository.addUser(
                     newUser,
-                    queries.INSERT_USER_DETAILS,
-                    queries.GET_LAST_INSERTED_USER);
+                    queries.INSERT_USER_DETAILS);
 
             return ApiResponse.call(HttpStatus.CREATED,
                     MessageConstants.USER_CREATED_SUCCESSFULLY,

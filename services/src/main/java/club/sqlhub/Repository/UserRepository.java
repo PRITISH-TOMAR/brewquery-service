@@ -21,15 +21,13 @@ public class UserRepository {
         return userExists;
     }
 
-    public UserDetailsDTO addUser(UserDetailsDBO user, String addQuery, String getUserQuery) {
-        jdbc.update(addQuery, user.getFirstName(), user.getLastName(), user.getEmail(), user.getStatus(),
+    public UserDetailsDTO addUser(UserDetailsDBO user, String addQuery) {
+        return jdbc.queryForObject(
+                addQuery,
+                new BeanPropertyRowMapper<>(UserDetailsDTO.class),
+                user.getFirstName(), user.getLastName(), user.getEmail(), user.getStatus(),
                 user.getRoleId(), user.getPhoneNumber(), user.getCountryCode(), user.getProfilePictureUrl(),
                 user.getHashedPassword(), user.getSalt());
-
-        UserDetailsDTO createdUser = jdbc.queryForObject(getUserQuery,
-                new BeanPropertyRowMapper<>(UserDetailsDTO.class));
-        return createdUser;
-
     }
 
 }

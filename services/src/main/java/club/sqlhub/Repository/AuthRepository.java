@@ -26,10 +26,10 @@ public class AuthRepository {
     }
 
     // ADD USER & RETURN CREATED USER
-    public UserDetailsDTO addUser(UserDetailsDBO user, String insertQuery, String getLastUserQuery) {
-
-        jdbc.update(
+    public UserDetailsDTO addUser(UserDetailsDBO user, String insertQuery) {
+        return jdbc.queryForObject(
                 insertQuery,
+                new BeanPropertyRowMapper<>(UserDetailsDTO.class),
                 user.getFirstName(),
                 user.getLastName(),
                 user.getEmail(),
@@ -40,10 +40,6 @@ public class AuthRepository {
                 user.getProfilePictureUrl(),
                 user.getHashedPassword(),
                 user.getSalt());
-
-        return jdbc.queryForObject(
-                getLastUserQuery,
-                new BeanPropertyRowMapper<>(UserDetailsDTO.class));
     }
 
     // USER VALIDATION
