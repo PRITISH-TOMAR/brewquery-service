@@ -26,6 +26,10 @@ public class UserQueriesResultService {
         return res;
     }
 
+    public JudgeResultDTO save(JudgeResultDTO result) {
+        return repo.save(result);
+    }
+
     public List<JudgeResultDTO> findByUserId(String userId) {
         return repo.findByUserId(userId);
     }
