@@ -78,9 +78,10 @@ public class SQLRemoteApiHelper {
         } catch (WebClientResponseException e) {
 
             String rawBody = e.getResponseBodyAsString();
+            HttpStatus status = HttpStatus.valueOf(e.getStatusCode().value());
 
             // -----------------------------------------
-            // ERROR RESPONSE
+            // ERROR RESPONSE — preserve actual status
             // -----------------------------------------
             try {
                 JsonNode node = mapper.readTree(rawBody);
@@ -90,13 +91,13 @@ public class SQLRemoteApiHelper {
                         rawBody;
 
                 return ApiResponse.call(
-                        HttpStatus.OK,
+                        status,
                         message,
                         node
                 );
             } catch (Exception ignore) {
                 return ApiResponse.call(
-                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        status,
                         rawBody,
                         rawBody
                 );

@@ -70,7 +70,7 @@ public class JudgeResponseConverter {
             }
 
             // TEST DETAILS
-            Object testDetails = resultMap.get("details");
+            Object testDetails = resultMap.get("testDetails");
             if (testDetails != null) {
                 response.setTestDetails(testDetails);
             }
