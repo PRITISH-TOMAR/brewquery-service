@@ -9,4 +9,7 @@ public class MessageConstants {
     public static final String QUERY_RUN_SUCCESSFULL = "QUERY_RUN_SUCCESSFULL";
     public static final String SESSION_EXPIRED = "SESSION_EXPIRED";
     public static final String UNSAFE_QUERY = "UNSAFE_QUERY";
+    public static final String OK = "OK";
+    public static final String JOB_COMPLETED = "COMPLETED";
+    public static final String JOB_FAILED = "FAILED";
 }
