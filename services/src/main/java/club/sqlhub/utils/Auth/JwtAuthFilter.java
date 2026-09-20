@@ -9,12 +9,14 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import club.sqlhub.constants.AppConstants;
 import club.sqlhub.entity.utlities.enums.AuthEnum;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 
 @Component
 @RequiredArgsConstructor
@@ -22,6 +24,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JWTHandler jwtHandler;
     private final UserDetailsService userDetailsService;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -52,6 +55,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             }
 
             if (result == AuthEnum.TokenValidationResult.INVALID) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json;charset=UTF-8");
+                response.setHeader("Access-Control-Allow-Origin", "*");
+                response.setHeader("Access-Control-Allow-Headers", "*");
+                response.setHeader("Access-Control-Expose-Headers", "*");
+                response.getWriter().write("{\"error\":\"INVALID\"}");
+                return;
+            }
+
+            // Reject tokens that have been blacklisted via logout
+            if (Boolean.TRUE.equals(redisTemplate.hasKey(AppConstants.REDIS_TOKEN_BLACKLIST_KEY + token))) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.setContentType("application/json;charset=UTF-8");
                 response.setHeader("Access-Control-Allow-Origin", "*");

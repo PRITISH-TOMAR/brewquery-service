@@ -3,6 +3,8 @@ package club.sqlhub.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 import club.sqlhub.entity.user.DTO.RegisterUserDTO;
 import club.sqlhub.entity.user.DTO.ResetPasswordDTO;
 import club.sqlhub.entity.user.DTO.UserDetailsDTO;
@@ -61,5 +63,10 @@ public class AuthController {
     @GetMapping("/reset-ping/{resetKey}")
     public ResponseEntity<ApiResponse<String>> resetPasswordPing(@Valid @PathVariable String resetKey) {
         return authService.resetPasswordPing(resetKey);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<String>> logout(HttpServletRequest request) {
+        return authService.logout(request);
     }
 }

@@ -26,4 +26,5 @@ public class MessageConstants {
     public static String NO_QUESTION_FOUND_FOR_THIS_DATASET = "NO QUESTION FOUND FOR THIS DATASET";
     public static String INVALID_TESTCASES = "INVALID_TESTCASES";
     public static String INVALID_QUESTION_ID = "INVALID_QUESTION_ID";
+    public static String LOGGED_OUT_SUCCESSFULLY = "LOGGED OUT SUCCESSFULLY";
 }

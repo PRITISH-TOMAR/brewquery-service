@@ -1,6 +1,7 @@
 package club.sqlhub.service;
 
 import java.time.Duration;
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.data.redis.core.RedisTemplate;
@@ -9,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.servlet.http.HttpServletRequest;
 import club.sqlhub.Repository.AuthRepository;
 import club.sqlhub.constants.AppConstants;
 import club.sqlhub.constants.MessageConstants;
@@ -289,6 +291,36 @@ public class AuthService {
         } catch (Exception e) {
             return ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR,
                     MessageConstants.INTERNAL_SERVER_ERROR, e);
+        }
+    }
+
+    public ResponseEntity<ApiResponse<String>> logout(HttpServletRequest request) {
+        try {
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ApiResponse.call(HttpStatus.OK, MessageConstants.LOGGED_OUT_SUCCESSFULLY);
+            }
+
+            String token = authHeader.substring(7);
+            TokenValidationResult result = jwtHandler.validateToken(token);
+
+            // Already expired or invalid — nothing to blacklist
+            if (result != TokenValidationResult.VALID) {
+                return ApiResponse.call(HttpStatus.OK, MessageConstants.LOGGED_OUT_SUCCESSFULLY);
+            }
+
+            Date expiration = jwtHandler.extractAllClaims(token).getExpiration();
+            long remainingMs = expiration.getTime() - System.currentTimeMillis();
+
+            if (remainingMs > 0) {
+                String blacklistKey = AppConstants.REDIS_TOKEN_BLACKLIST_KEY + token;
+                redisTemplate.opsForValue().set(blacklistKey, "blacklisted", Duration.ofMillis(remainingMs));
+            }
+
+            return ApiResponse.call(HttpStatus.OK, MessageConstants.LOGGED_OUT_SUCCESSFULLY);
+
+        } catch (Exception e) {
+            return ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, MessageConstants.INTERNAL_SERVER_ERROR, e);
         }
     }
 
