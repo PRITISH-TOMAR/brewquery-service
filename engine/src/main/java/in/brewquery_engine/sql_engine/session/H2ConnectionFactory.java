@@ -19,8 +19,9 @@ public class H2ConnectionFactory {
                 ";DB_CLOSE_DELAY=0" +
                 ";DB_CLOSE_ON_EXIT=TRUE" +
                 ";TRACE_LEVEL_FILE=0" +
-                ";TRACE_LEVEL_SYSTEM_OUT=0"+
-                ";DATABASE_TO_UPPER=false";
+                ";TRACE_LEVEL_SYSTEM_OUT=0" +
+                ";DATABASE_TO_UPPER=false" +
+                ";NON_KEYWORDS=YEAR,VALUE,TIME,DATE,KEY,TYPE,NAME,STATUS,ROLE,COMMENT,LEVEL,POSITION,LANGUAGE,LIMIT,OFFSET,ROWS";
 
         Properties props = new Properties();
         props.setProperty("user", "sa");
