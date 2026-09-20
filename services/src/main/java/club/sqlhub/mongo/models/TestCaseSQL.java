@@ -26,6 +26,13 @@ public class TestCaseSQL {
         private String seedSql;
         private Double numericTolerance;
         private String type;
+        /** Pre-parsed seed data for public test cases. Null for private TCs.
+         *  Shape: [ { table: String, columns: [String], rows: [[Object]] } ] */
+        private Object sampleData;
+        /** Expected output when expectedSql is run against this TC's seed.
+         *  Shape: { columns: [String], rows: [[Object]], rowsCount: Integer }.
+         *  Null for private TCs. */
+        private Object expectedOutput;
     }
 
     @Document(collection = "testcases")
