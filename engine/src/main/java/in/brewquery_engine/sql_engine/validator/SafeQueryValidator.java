@@ -35,25 +35,42 @@ public class SafeQueryValidator {
 
             switch (type) {
                 case "SELECT":
+                case "DQL":
                     return stmt instanceof Select;
 
                 case "INSERT":
+                case "DML_INSERT":
                     return stmt instanceof Insert;
 
                 case "UPDATE":
+                case "DML_UPDATE":
                     return stmt instanceof Update;
 
                 case "DELETE":
+                case "DML_DELETE":
                     return stmt instanceof Delete;
 
+                case "DML":
+                    return stmt instanceof Insert
+                        || stmt instanceof Update
+                        || stmt instanceof Delete;
+
                 case "CREATE":
+                case "DDL_CREATE":
                     return stmt instanceof CreateTable;
 
                 case "DROP":
+                case "DDL_DROP":
                     return stmt instanceof Drop;
 
                 case "ALTER":
+                case "DDL_ALTER":
                     return stmt instanceof Alter;
+
+                case "DDL":
+                    return stmt instanceof CreateTable
+                        || stmt instanceof Drop
+                        || stmt instanceof Alter;
 
                 default:
                     return false;
