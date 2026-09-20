@@ -13,6 +13,7 @@ public class SQLDTO {
     public static class SQLInputDTO {
         private String questionId;
         private String query;
+        private String sqlMode;
     }
 
     @Data
@@ -24,5 +25,6 @@ public class SQLDTO {
         private String type;
         private String expectedSql;
         private List<TestCase> testCases;
+        private String sqlMode;
     }
 }
