@@ -48,8 +48,7 @@ services:
     build:
       context: ../engine
     environment:
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
+      REDIS_URL: redis://redis:6379
     volumes:
       - datasets:/mnt/brewquery/datasets
     ports:
