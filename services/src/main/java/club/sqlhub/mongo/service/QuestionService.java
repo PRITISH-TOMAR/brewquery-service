@@ -61,11 +61,6 @@ public class QuestionService {
         try {
             List<Question> res = repo.findByDatasetId(datasetId);
 
-            if (res.isEmpty()) {
-                return ApiResponse.error(HttpStatus.NOT_FOUND, MessageConstants.NO_QUESTION_FOUND_FOR_THIS_DATASET,
-                        null);
-            }
-
             return ApiResponse.call(HttpStatus.OK, MessageConstants.OK, res);
         } catch (Exception e) {
             return ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, MessageConstants.INTERNAL_SERVER_ERROR, e);
