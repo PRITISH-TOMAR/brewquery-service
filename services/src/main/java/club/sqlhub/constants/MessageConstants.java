@@ -27,4 +27,13 @@ public class MessageConstants {
     public static String INVALID_TESTCASES = "INVALID_TESTCASES";
     public static String INVALID_QUESTION_ID = "INVALID_QUESTION_ID";
     public static String LOGGED_OUT_SUCCESSFULLY = "LOGGED OUT SUCCESSFULLY";
+
+    // Profile
+    public static String PROFILE_FETCHED      = "PROFILE FETCHED SUCCESSFULLY";
+    public static String STATS_FETCHED        = "STATS FETCHED SUCCESSFULLY";
+    public static String SUBMISSIONS_FETCHED  = "SUBMISSIONS FETCHED SUCCESSFULLY";
+    public static String HEATMAP_FETCHED      = "HEATMAP FETCHED SUCCESSFULLY";
+    public static String AVATAR_UPLOADED      = "AVATAR UPLOADED SUCCESSFULLY";
+    public static String AVATAR_TOO_LARGE     = "Image must be smaller than 2 MB";
+    public static String AVATAR_EMPTY         = "No file provided";
 }
