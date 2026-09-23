@@ -2,7 +2,6 @@ package club.sqlhub.Repository;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.UUID;
 
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -31,9 +30,10 @@ public class PageAssetsSQLRepository {
     }
 
     public PageAssets save(PageAssets pa) {
-        if (pa.getId() == null) pa.setId(UUID.randomUUID().toString());
         pa.setUpdatedAt(LocalDateTime.now());
-        jdbc.update(queries.UPSERT, pa.getId(), pa.getPageKey(), pa.getHeroImageUrl(), pa.getUpdatedAt());
+        String id = jdbc.queryForObject(queries.UPSERT, String.class,
+                pa.getPageKey(), pa.getHeroImageUrl(), pa.getUpdatedAt());
+        pa.setId(id);
         return pa;
     }
 }

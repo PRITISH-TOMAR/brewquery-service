@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -21,19 +22,22 @@ public class MetadataSQLRepository {
     private final MetadataQueries queries;
     private final ObjectMapper    mapper;
 
-    public Metadata findById(String datasetId) {
+    private RowMapper<Metadata> rowMapper() { return (rs, rn) -> {
+        Metadata m = new Metadata();
+        m.setId(rs.getString("id"));
+        m.setDatasetId(rs.getString("datasetId"));
         try {
-            return jdbc.queryForObject(queries.FIND_BY_ID, (rs, rn) -> {
-                Metadata m = new Metadata();
-                m.setId(rs.getString("id"));
-                try {
-                    m.setTables(mapper.readValue(rs.getString("tables"),
-                            new TypeReference<List<Metadata.TableSchema>>() {}));
-                } catch (Exception e) {
-                    throw new RuntimeException("Failed to deserialize metadata tables", e);
-                }
-                return m;
-            }, datasetId);
+            m.setTables(mapper.readValue(rs.getString("tables"),
+                    new TypeReference<List<Metadata.TableSchema>>() {}));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to deserialize metadata tables", e);
+        }
+        return m;
+    }; }
+
+    public Metadata findByDatasetId(String datasetId) {
+        try {
+            return jdbc.queryForObject(queries.FIND_BY_DATASET_ID, rowMapper(), datasetId);
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
@@ -41,14 +45,21 @@ public class MetadataSQLRepository {
 
     public Metadata save(Metadata m) {
         try {
-            jdbc.update(queries.UPSERT, m.getId(), mapper.writeValueAsString(m.getTables()));
+            if (m.getId() == null) {
+                String id = jdbc.queryForObject(queries.INSERT, String.class,
+                        m.getDatasetId(), mapper.writeValueAsString(m.getTables()));
+                m.setId(id);
+            } else {
+                jdbc.update(queries.UPDATE,
+                        mapper.writeValueAsString(m.getTables()), m.getDatasetId());
+            }
         } catch (Exception e) {
             throw new RuntimeException("Failed to save metadata", e);
         }
         return m;
     }
 
-    public void deleteById(String id) {
-        jdbc.update(queries.DELETE_BY_ID, id);
+    public void deleteByDatasetId(String datasetId) {
+        jdbc.update(queries.DELETE_BY_DATASET_ID, datasetId);
     }
 }

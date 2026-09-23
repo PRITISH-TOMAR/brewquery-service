@@ -23,7 +23,7 @@ public class JudgeResultSQLRepository {
     private final JudgeResultQueries queries;
     private final ObjectMapper       mapper;
 
-    private final RowMapper<JudgeResultDTO> rowMapper = (rs, rn) -> {
+    private RowMapper<JudgeResultDTO> rowMapper() { return (rs, rn) -> {
         JudgeResultDTO d = new JudgeResultDTO();
         d.setJobId(rs.getString("jobId"));
         d.setUserId(rs.getString("userId"));
@@ -41,18 +41,18 @@ public class JudgeResultSQLRepository {
             throw new RuntimeException("Failed to deserialize judge result JSONB", e);
         }
         return d;
-    };
+    }; }
 
     public JudgeResultDTO findByJobId(String jobId) {
         try {
-            return jdbc.queryForObject(queries.FIND_BY_JOB_ID, rowMapper, jobId);
+            return jdbc.queryForObject(queries.FIND_BY_JOB_ID, rowMapper(), jobId);
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
     }
 
     public List<JudgeResultDTO> findByUserId(String userId) {
-        return jdbc.query(queries.FIND_BY_USER_ID, rowMapper, userId);
+        return jdbc.query(queries.FIND_BY_USER_ID, rowMapper(), userId);
     }
 
     public List<JudgeResultDTO> findByFilters(
@@ -62,7 +62,7 @@ public class JudgeResultSQLRepository {
         Timestamp from = fromDate != null ? new Timestamp(fromDate.getTime()) : null;
         Timestamp to   = toDate   != null ? new Timestamp(toDate.getTime())   : null;
 
-        return jdbc.query(queries.FIND_BY_FILTERS, rowMapper,
+        return jdbc.query(queries.FIND_BY_FILTERS, rowMapper(),
                 userId,
                 jobId, jobId,
                 questionId, questionId,

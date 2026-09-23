@@ -25,7 +25,7 @@ public class QuestionSQLRepository {
     private final QuestionQueries queries;
     private final ObjectMapper    mapper;
 
-    private final RowMapper<Question> rowMapper = (rs, rn) -> {
+    private RowMapper<Question> rowMapper() { return (rs, rn) -> {
         Question q = new Question();
         q.setId(rs.getString("id"));
         q.setDatasetId(rs.getString("datasetId"));
@@ -40,29 +40,40 @@ public class QuestionSQLRepository {
             throw new RuntimeException("Failed to deserialize question JSONB fields", e);
         }
         return q;
-    };
+    }; }
 
     public Question findById(String id) {
         try {
-            return jdbc.queryForObject(queries.FIND_BY_ID, rowMapper, id);
+            return jdbc.queryForObject(queries.FIND_BY_ID, rowMapper(), id);
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
     }
 
     public List<Question> findByDatasetId(String datasetId) {
-        return jdbc.query(queries.FIND_BY_DATASET_ID, rowMapper, datasetId);
+        return jdbc.query(queries.FIND_BY_DATASET_ID, rowMapper(), datasetId);
     }
 
     public Question save(Question q) {
         try {
-            jdbc.update(queries.UPSERT,
-                    q.getId(), q.getDatasetId(), q.getTitle(), q.getQuestion(),
-                    q.getDifficulty(),
-                    mapper.writeValueAsString(q.getTags()),
-                    q.getType(),
-                    mapper.writeValueAsString(q.getTableNames()),
-                    q.getCreatedAt());
+            if (q.getId() == null) {
+                String id = jdbc.queryForObject(queries.INSERT, String.class,
+                        q.getDatasetId(), q.getTitle(), q.getQuestion(),
+                        q.getDifficulty(),
+                        mapper.writeValueAsString(q.getTags()),
+                        q.getType(),
+                        mapper.writeValueAsString(q.getTableNames()),
+                        q.getCreatedAt());
+                q.setId(id);
+            } else {
+                jdbc.update(queries.UPDATE,
+                        q.getDatasetId(), q.getTitle(), q.getQuestion(),
+                        q.getDifficulty(),
+                        mapper.writeValueAsString(q.getTags()),
+                        q.getType(),
+                        mapper.writeValueAsString(q.getTableNames()),
+                        q.getId());
+            }
         } catch (Exception e) {
             throw new RuntimeException("Failed to save question", e);
         }
@@ -74,7 +85,7 @@ public class QuestionSQLRepository {
         try {
             Array arr = jdbc.getDataSource().getConnection()
                     .createArrayOf("VARCHAR", ids.toArray(new String[0]));
-            return jdbc.query(queries.FIND_ALL_BY_IDS, rowMapper, arr);
+            return jdbc.query(queries.FIND_ALL_BY_IDS, rowMapper(), arr);
         } catch (Exception e) {
             throw new RuntimeException("Failed to query questions by ids", e);
         }

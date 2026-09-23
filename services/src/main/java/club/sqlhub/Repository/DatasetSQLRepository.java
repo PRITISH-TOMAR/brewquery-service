@@ -25,7 +25,7 @@ public class DatasetSQLRepository {
     private final DatasetQueries queries;
     private final ObjectMapper   mapper;
 
-    private final RowMapper<Dataset> rowMapper = (rs, rn) -> {
+    private RowMapper<Dataset> rowMapper() { return (rs, rn) -> {
         Dataset d = new Dataset();
         d.setId(rs.getString("id"));
         d.setSlug(rs.getString("slug"));
@@ -48,18 +48,18 @@ public class DatasetSQLRepository {
             throw new RuntimeException("Failed to deserialize dataset JSONB fields", e);
         }
         return d;
-    };
+    }; }
 
     public Dataset findById(String id) {
         try {
-            return jdbc.queryForObject(queries.FIND_BY_ID, rowMapper, id);
+            return jdbc.queryForObject(queries.FIND_BY_ID, rowMapper(), id);
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
     }
 
     public List<Dataset> findAllPaged(int limit, int offset) {
-        return jdbc.query(queries.FIND_ALL_PAGED, rowMapper, limit, offset);
+        return jdbc.query(queries.FIND_ALL_PAGED, rowMapper(), limit, offset);
     }
 
     public long countAll() {
@@ -68,7 +68,7 @@ public class DatasetSQLRepository {
     }
 
     public List<Dataset> findByTitlePaged(String search, int limit, int offset) {
-        return jdbc.query(queries.FIND_ALL_BY_TITLE_PAGED, rowMapper, "%" + search + "%", limit, offset);
+        return jdbc.query(queries.FIND_ALL_BY_TITLE_PAGED, rowMapper(), "%" + search + "%", limit, offset);
     }
 
     public long countByTitle(String search) {
@@ -78,16 +78,30 @@ public class DatasetSQLRepository {
 
     public Dataset save(Dataset d) {
         try {
-            jdbc.update(queries.UPSERT,
-                    d.getId(), d.getSlug(), d.getTitle(), d.getDescription(),
-                    d.getIcon(), d.getCoverImage(), d.getErImage(),
-                    mapper.writeValueAsString(d.getTags()),
-                    mapper.writeValueAsString(d.getCategories()),
-                    mapper.writeValueAsString(d.getSkills()),
-                    d.getDifficulty(),
-                    mapper.writeValueAsString(d.getSqlModesAvailable()),
-                    d.getQuestions(), d.getTableCount(), d.getDataType(),
-                    d.getEstimatedTime(), d.getCreatedAt());
+            if (d.getId() == null) {
+                String id = jdbc.queryForObject(queries.INSERT, String.class,
+                        d.getSlug(), d.getTitle(), d.getDescription(),
+                        d.getIcon(), d.getCoverImage(), d.getErImage(),
+                        mapper.writeValueAsString(d.getTags()),
+                        mapper.writeValueAsString(d.getCategories()),
+                        mapper.writeValueAsString(d.getSkills()),
+                        d.getDifficulty(),
+                        mapper.writeValueAsString(d.getSqlModesAvailable()),
+                        d.getQuestions(), d.getTableCount(), d.getDataType(),
+                        d.getEstimatedTime(), d.getCreatedAt());
+                d.setId(id);
+            } else {
+                jdbc.update(queries.UPDATE,
+                        d.getSlug(), d.getTitle(), d.getDescription(),
+                        d.getIcon(), d.getCoverImage(), d.getErImage(),
+                        mapper.writeValueAsString(d.getTags()),
+                        mapper.writeValueAsString(d.getCategories()),
+                        mapper.writeValueAsString(d.getSkills()),
+                        d.getDifficulty(),
+                        mapper.writeValueAsString(d.getSqlModesAvailable()),
+                        d.getQuestions(), d.getTableCount(), d.getDataType(),
+                        d.getEstimatedTime(), d.getId());
+            }
         } catch (Exception e) {
             throw new RuntimeException("Failed to save dataset", e);
         }
@@ -103,7 +117,7 @@ public class DatasetSQLRepository {
         try {
             Array arr = jdbc.getDataSource().getConnection()
                     .createArrayOf("VARCHAR", ids.toArray(new String[0]));
-            return jdbc.query(queries.FIND_ALL_BY_IDS, rowMapper, arr);
+            return jdbc.query(queries.FIND_ALL_BY_IDS, rowMapper(), arr);
         } catch (Exception e) {
             throw new RuntimeException("Failed to query datasets by ids", e);
         }

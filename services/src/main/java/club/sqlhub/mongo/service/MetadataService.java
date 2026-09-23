@@ -13,7 +13,7 @@ public class MetadataService {
     private final MetadataSQLRepository repo;
 
     public Metadata getByDatasetId(String datasetId) {
-        return repo.findById(datasetId);
+        return repo.findByDatasetId(datasetId);
     }
 
     public Metadata save(Metadata metadata) {
@@ -21,6 +21,6 @@ public class MetadataService {
     }
 
     public void delete(String datasetId) {
-        repo.deleteById(datasetId);
+        repo.deleteByDatasetId(datasetId);
     }
 }

@@ -26,7 +26,7 @@ public class TestCaseSQLRepository {
     private final TestCaseQueries queries;
     private final ObjectMapper    mapper;
 
-    private final RowMapper<TestCases> rowMapper = (rs, rn) -> {
+    private RowMapper<TestCases> rowMapper() { return (rs, rn) -> {
         TestCases tc = new TestCases();
         tc.setId(rs.getString("id"));
         tc.setQuestionId(rs.getString("questionId"));
@@ -39,23 +39,23 @@ public class TestCaseSQLRepository {
             throw new RuntimeException("Failed to deserialize test_cases JSONB", e);
         }
         return tc;
-    };
+    }; }
 
     public Optional<TestCases> findById(String id) {
         try {
-            return Optional.ofNullable(jdbc.queryForObject(queries.FIND_BY_ID, rowMapper, id));
+            return Optional.ofNullable(jdbc.queryForObject(queries.FIND_BY_ID, rowMapper(), id));
         } catch (EmptyResultDataAccessException e) {
             return Optional.empty();
         }
     }
 
     public Optional<TestCases> findByQuestionId(String questionId) {
-        List<TestCases> results = jdbc.query(queries.FIND_BY_QUESTION_ID, rowMapper, questionId);
+        List<TestCases> results = jdbc.query(queries.FIND_BY_QUESTION_ID, rowMapper(), questionId);
         return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
     }
 
     public List<TestCases> findAll() {
-        return jdbc.query(queries.FIND_ALL, rowMapper);
+        return jdbc.query(queries.FIND_ALL, rowMapper());
     }
 
     public List<TestCases> findByQuestionIds(List<String> questionIds) {
@@ -63,7 +63,7 @@ public class TestCaseSQLRepository {
         try {
             Array arr = jdbc.getDataSource().getConnection()
                     .createArrayOf("VARCHAR", questionIds.toArray(new String[0]));
-            return jdbc.query(queries.FIND_BY_QUESTION_IDS, rowMapper, arr);
+            return jdbc.query(queries.FIND_BY_QUESTION_IDS, rowMapper(), arr);
         } catch (Exception e) {
             throw new RuntimeException("Failed to query test cases by question ids", e);
         }
@@ -79,9 +79,17 @@ public class TestCaseSQLRepository {
 
     public TestCases save(TestCases tc) {
         try {
-            jdbc.update(queries.UPSERT,
-                    tc.getId(), tc.getQuestionId(), tc.getType(), tc.getExpectedSql(),
-                    mapper.writeValueAsString(tc.getTestCases()));
+            if (tc.getId() == null) {
+                String id = jdbc.queryForObject(queries.INSERT, String.class,
+                        tc.getQuestionId(), tc.getType(), tc.getExpectedSql(),
+                        mapper.writeValueAsString(tc.getTestCases()));
+                tc.setId(id);
+            } else {
+                jdbc.update(queries.UPDATE,
+                        tc.getType(), tc.getExpectedSql(),
+                        mapper.writeValueAsString(tc.getTestCases()),
+                        tc.getId());
+            }
         } catch (Exception e) {
             throw new RuntimeException("Failed to save test case group", e);
         }

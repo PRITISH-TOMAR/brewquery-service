@@ -40,7 +40,7 @@ public class QuestionService {
             }
 
             String dbId = ques.getDatasetId();
-            Metadata metadata = metaRepo.findById(dbId);
+            Metadata metadata = metaRepo.findByDatasetId(dbId);
 
             Set<String> relevant = (ques.getTableNames() != null && !ques.getTableNames().isEmpty())
                     ? Set.copyOf(ques.getTableNames()) : null;

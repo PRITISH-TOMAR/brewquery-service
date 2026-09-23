@@ -8,6 +8,7 @@ import lombok.Data;
 public class Metadata {
 
     private String id;
+    private String datasetId;
 
     private List<TableSchema> tables;
 

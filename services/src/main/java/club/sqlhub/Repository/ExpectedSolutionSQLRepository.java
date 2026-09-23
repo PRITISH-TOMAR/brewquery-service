@@ -22,7 +22,7 @@ public class ExpectedSolutionSQLRepository {
     private final ExpectedSolutionQueries queries;
     private final ObjectMapper            mapper;
 
-    private final RowMapper<ExpectedSolution> rowMapper = (rs, rn) -> {
+    private RowMapper<ExpectedSolution> rowMapper() { return (rs, rn) -> {
         ExpectedSolution s = new ExpectedSolution();
         s.setId(rs.getString("id"));
         s.setQuestionId(rs.getString("questionId"));
@@ -35,34 +35,42 @@ public class ExpectedSolutionSQLRepository {
             throw new RuntimeException("Failed to deserialize solutions JSONB", e);
         }
         return s;
-    };
+    }; }
 
     public ExpectedSolution findById(String id) {
         try {
-            return jdbc.queryForObject(queries.FIND_BY_ID, rowMapper, id);
+            return jdbc.queryForObject(queries.FIND_BY_ID, rowMapper(), id);
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
     }
 
     public List<ExpectedSolution> findByQuestionId(String questionId) {
-        return jdbc.query(queries.FIND_BY_QUESTION_ID, rowMapper, questionId);
+        return jdbc.query(queries.FIND_BY_QUESTION_ID, rowMapper(), questionId);
     }
 
     public List<ExpectedSolution> findByDatasetId(String datasetId) {
-        return jdbc.query(queries.FIND_BY_DATASET_ID, rowMapper, datasetId);
+        return jdbc.query(queries.FIND_BY_DATASET_ID, rowMapper(), datasetId);
     }
 
     public List<ExpectedSolution> findByQuestionIdAndSqlMode(String questionId, String sqlMode) {
-        return jdbc.query(queries.FIND_BY_QUESTION_AND_MODE, rowMapper, questionId, sqlMode);
+        return jdbc.query(queries.FIND_BY_QUESTION_AND_MODE, rowMapper(), questionId, sqlMode);
     }
 
     public ExpectedSolution save(ExpectedSolution s) {
         try {
-            jdbc.update(queries.UPSERT,
-                    s.getId(), s.getQuestionId(), s.getDatasetId(), s.getSqlMode(),
-                    mapper.writeValueAsString(s.getSolutions()),
-                    s.getCreatedAt());
+            if (s.getId() == null) {
+                String id = jdbc.queryForObject(queries.INSERT, String.class,
+                        s.getQuestionId(), s.getDatasetId(), s.getSqlMode(),
+                        mapper.writeValueAsString(s.getSolutions()),
+                        s.getCreatedAt());
+                s.setId(id);
+            } else {
+                jdbc.update(queries.UPDATE,
+                        s.getQuestionId(), s.getDatasetId(), s.getSqlMode(),
+                        mapper.writeValueAsString(s.getSolutions()),
+                        s.getId());
+            }
         } catch (Exception e) {
             throw new RuntimeException("Failed to save expected solution", e);
         }
