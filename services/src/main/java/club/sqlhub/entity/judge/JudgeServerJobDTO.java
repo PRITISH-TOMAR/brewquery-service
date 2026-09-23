@@ -33,12 +33,16 @@ public class JudgeServerJobDTO {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class SubmissionResponseDTO {
+        private String id;
         private String userId;
-        private String executionTime;
-        private String type;
         private String questionId;
-        private String SubmissionTime;
-        private String verdict;
+        private String questionTitle;
+        private String dataset;
+        private String level;
+        private String language;
+        private String timeTaken;
+        private String submittedAt;
+        private String result;
         private int passCount;
         private int totalCount;
         private Object testDetails;

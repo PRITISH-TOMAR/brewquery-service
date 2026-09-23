@@ -20,23 +20,19 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private final UserQueries queries;
 
     @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
 
-        List<UserDetailsDBO> userList = userRepository.userExists(email, queries.IF_USER_EXISTS);
+        List<UserDetailsDBO> userList = userRepository.userExistsById(Integer.parseInt(userId), queries.IF_USER_EXISTS_BY_ID);
 
         if (userList.isEmpty()) {
-            throw new UsernameNotFoundException("User not found: " + email);
+            throw new UsernameNotFoundException("User not found: " + userId);
         }
 
         UserDetailsDBO user = userList.get(0);
 
         String role = "ROLE_" + user.getRoleName().toUpperCase();
 
-        return org.springframework.security.core.userdetails.User
-                .builder()
-                .username(user.getEmail())
-                .password(user.getHashedPassword()) // not used for JWT flow
-                .roles(role.replace("ROLE_", "")) // Spring auto adds ROLE_
-                .build();
+        var authorities = org.springframework.security.core.authority.AuthorityUtils.createAuthorityList(role);
+        return new UserPrincipal(String.valueOf(user.getUserId()), user.getHashedPassword(), authorities);
     }
 }

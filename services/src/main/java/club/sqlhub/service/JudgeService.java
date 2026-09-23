@@ -1,19 +1,25 @@
 package club.sqlhub.service;
 
-import java.time.Duration;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import club.sqlhub.entity.judge.JudgeServerJobDTO.RunTestcaseResponseDTO;
 import club.sqlhub.entity.judge.JudgeServerJobDTO.SubmissionResponseDTO;
 import club.sqlhub.entity.judge.SubmissionRequestDTO;
+import club.sqlhub.mongo.models.Dataset;
 import club.sqlhub.mongo.models.JudgeResult.JudgeResultDTO;
+import club.sqlhub.mongo.models.Question;
+import club.sqlhub.mongo.repository.DatasetRepository;
+import club.sqlhub.mongo.service.QuestionService;
 import club.sqlhub.mongo.service.UserQueriesResultService;
 import club.sqlhub.utils.APiResponse.ApiResponse;
 import club.sqlhub.utils.converter.JudgeResponseConverter;
@@ -26,6 +32,8 @@ public class JudgeService {
     private final UserQueriesResultService userQueriesResultService;
     private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
+    private final QuestionService questionService;
+    private final DatasetRepository datasetRepository;
 
     private static final String RESULT_PREFIX = "result:sql:";
     private static final String META_PREFIX   = "meta:sql:";
@@ -39,15 +47,53 @@ public class JudgeService {
                 RunTestcaseResponseDTO runResult =
                         objectMapper.readValue(resultJson, RunTestcaseResponseDTO.class);
 
+                // Parse meta JSON for userId + questionId
+                String userId = null;
+                String questionId = null;
+                String metaJson = stringRedisTemplate.opsForValue().get(META_PREFIX + jobId);
+                if (metaJson != null) {
+                    try {
+                        Map<String, String> meta = objectMapper.readValue(metaJson, new TypeReference<>() {});
+                        userId = meta.get("userId");
+                        questionId = meta.get("questionId");
+                    } catch (Exception ignored) {
+                        userId = metaJson; // legacy plain-string fallback
+                    }
+                }
+
+                // Enrich with question + dataset info
+                String questionTitle = null, datasetTitle = null, level = null;
+                if (questionId != null) {
+                    Question q = questionService.getByIdRaw(questionId);
+                    if (q != null) {
+                        questionTitle = q.getTitle();
+                        level = q.getDifficulty();
+                        Dataset ds = datasetRepository.findById(q.getDatasetId()).orElse(null);
+                        if (ds != null) datasetTitle = ds.getTitle();
+                    }
+                }
+
                 // Persist to MongoDB for history (upsert — jobId is @Id)
-                String userId = stringRedisTemplate.opsForValue().get(META_PREFIX + jobId);
                 JudgeResultDTO dto = new JudgeResultDTO();
                 dto.setJobId(jobId);
                 dto.setUserId(userId);
+                dto.setQuestionId(questionId);
+                dto.setQuestionTitle(questionTitle);
+                dto.setDataset(datasetTitle);
+                dto.setLevel(level);
+                dto.setLanguage("SQL");
+                dto.setSubmittedAt(new Date());
                 dto.setResult(runResult);
                 userQueriesResultService.save(dto);
 
                 SubmissionResponseDTO response = toSubmissionResponse(runResult);
+                response.setId(jobId);
+                response.setUserId(userId);
+                response.setQuestionId(questionId);
+                response.setQuestionTitle(questionTitle);
+                response.setDataset(datasetTitle);
+                response.setLevel(level);
+                response.setLanguage("SQL");
                 return ApiResponse.call(HttpStatus.OK, "Job result fetched successfully", response);
             }
 
@@ -61,7 +107,7 @@ public class JudgeService {
 
             // 3. Still processing
             SubmissionResponseDTO pending = new SubmissionResponseDTO();
-            pending.setVerdict("PENDING");
+            pending.setResult("PENDING");
             return ApiResponse.call(HttpStatus.OK, "Job still processing", pending);
 
         } catch (Exception ex) {
@@ -76,10 +122,9 @@ public class JudgeService {
         SubmissionResponseDTO res = new SubmissionResponseDTO();
         res.setPassCount(r.getPassedCount());
         res.setTotalCount(r.getTotalCount());
-        res.setExecutionTime(r.getTotalExecutionMs() + " ms");
+        res.setTimeTaken(r.getTotalExecutionMs() + " ms");
         res.setTestDetails(r.getTestDetails());
-        res.setType("submission");
-        res.setVerdict(mapVerdict(r.getOverallStatus()));
+        res.setResult(mapVerdict(r.getOverallStatus()));
         return res;
     }
 

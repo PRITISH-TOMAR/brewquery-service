@@ -7,8 +7,6 @@ import java.util.Date;
 @Data
 public class SubmissionRequestDTO {
 
-    @NotBlank(message = "userId is required")
-    @Size(max = 100, message = "userId cannot exceed 100 characters")
     private String userId;
 
     @Size(max = 100, message = "jobId cannot exceed 100 characters")

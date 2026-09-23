@@ -95,7 +95,7 @@ public class AuthService {
             if (!validPassword)
                 return ApiResponse.call(HttpStatus.NOT_FOUND, MessageConstants.USER_NOT_FOUND);
 
-            String subject = existUser.get(0).getEmail();
+            String subject = String.valueOf(existUser.get(0).getUserId());
 
             UserJWTDetailsDBO resUser = jwtHandler.buildUserJWTDetails(subject, existUser.get(0), user.getRememberMe());
 

@@ -5,6 +5,25 @@ import org.springframework.stereotype.Component;
 @Component
 public class UserQueries {
 
+    public final String IF_USER_EXISTS_BY_ID = """
+                    SELECT
+                    ud.user_id AS userId,
+                    ud.first_name AS firstName,
+                    ud.last_name AS lastName,
+                    ud.email AS email,
+                    ud.role_id AS roleId,
+                    ur.role_name AS roleName,
+                    ud.phone_number AS phoneNumber,
+                    ud.status AS status,
+                    ud.country_code AS countryCode,
+                    ud.profile_picture_url AS profilePictureUrl,
+                    ud.hashed_password AS hashedPassword,
+                    ud.salt AS salt
+                    FROM user_details ud
+                    JOIN user_roles ur ON ur.role_id = ud.role_id
+                    WHERE ud.user_id = ?
+                    """;
+
     public final String IF_USER_EXISTS = """
                     SELECT
                     ud.user_id AS userId,

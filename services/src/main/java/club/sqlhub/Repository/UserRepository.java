@@ -21,6 +21,10 @@ public class UserRepository {
         return userExists;
     }
 
+    public List<UserDetailsDBO> userExistsById(Integer userId, String query) {
+        return jdbc.query(query, new BeanPropertyRowMapper<>(UserDetailsDBO.class), userId);
+    }
+
     public UserDetailsDTO addUser(UserDetailsDBO user, String addQuery) {
         return jdbc.queryForObject(
                 addQuery,

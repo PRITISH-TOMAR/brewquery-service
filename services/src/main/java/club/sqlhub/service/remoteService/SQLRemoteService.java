@@ -94,9 +94,11 @@ public class SQLRemoteService {
             String jobJson = objectMapper.writeValueAsString(jobPayload);
             stringRedisTemplate.opsForList().leftPush(JUDGE_QUEUE, jobJson);
 
-            // Store userId so JudgeService can persist history when polled.
+            // Store userId + questionId so JudgeService can persist history when polled.
+            String metaJson = objectMapper.writeValueAsString(
+                    java.util.Map.of("userId", userId, "questionId", obj.getQuestionId()));
             stringRedisTemplate.opsForValue().set(
-                    META_PREFIX + jobPayload.getJobId(), userId, Duration.ofSeconds(META_TTL_S));
+                    META_PREFIX + jobPayload.getJobId(), metaJson, Duration.ofSeconds(META_TTL_S));
 
             SubmissionStatusResponseDTO response = new SubmissionStatusResponseDTO();
             response.setJobId(jobPayload.getJobId());
