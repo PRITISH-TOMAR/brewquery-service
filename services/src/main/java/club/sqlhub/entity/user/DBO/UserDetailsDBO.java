@@ -23,6 +23,8 @@ public class UserDetailsDBO {
 
     private Integer roleId = AppConstants.DEFAULT_ROLE_ID;
 
+    private String roleName;
+
     private String phoneNumber;
 
     private String countryCode;

@@ -30,8 +30,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
         UserDetailsDBO user = userList.get(0);
 
-        // Role mapping → ROLE_USER / ROLE_ADMIN etc
-        String role = (user.getRoleId() == 1) ? "ROLE_USER" : "ROLE__";
+        String role = "ROLE_" + user.getRoleName().toUpperCase();
 
         return org.springframework.security.core.userdetails.User
                 .builder()

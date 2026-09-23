@@ -29,6 +29,7 @@ public class Dataset {
     private int tableCount;
     private String dataType;
     private String estimatedTime;
+    private String erImage;
 
     private LocalDateTime createdAt = LocalDateTime.now();
 }

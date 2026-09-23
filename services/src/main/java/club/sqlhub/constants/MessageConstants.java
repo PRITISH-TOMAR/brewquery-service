@@ -36,4 +36,9 @@ public class MessageConstants {
     public static String AVATAR_UPLOADED      = "AVATAR UPLOADED SUCCESSFULLY";
     public static String AVATAR_TOO_LARGE     = "Image must be smaller than 2 MB";
     public static String AVATAR_EMPTY         = "No file provided";
+
+    // Admin asset uploads
+    public static String ASSET_UPLOADED       = "ASSET UPLOADED SUCCESSFULLY";
+    public static String ASSET_TOO_LARGE      = "Image must be smaller than 5 MB";
+    public static String ASSET_EMPTY          = "No file provided";
 }
