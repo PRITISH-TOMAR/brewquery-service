@@ -14,15 +14,12 @@ import org.springframework.web.bind.annotation.RestController;
 import club.sqlhub.constants.MessageConstants;
 import club.sqlhub.entity.Datasets.DatasetPageResponseDTO;
 import club.sqlhub.entity.Datasets.ProblemDescription;
-import club.sqlhub.entity.Enums.TestCaseType;
 import club.sqlhub.mongo.models.Dataset;
 import club.sqlhub.mongo.models.Question;
-import club.sqlhub.mongo.models.TestCaseSQL.TestCase;
 import club.sqlhub.mongo.models.ExpectedSolution;
 import club.sqlhub.mongo.service.DatasetService;
 import club.sqlhub.mongo.service.ExpectedSolutionService;
 import club.sqlhub.mongo.service.QuestionService;
-import club.sqlhub.mongo.service.TestCaseService;
 import club.sqlhub.utils.APiResponse.ApiResponse;
 import lombok.AllArgsConstructor;
 
@@ -33,7 +30,6 @@ import lombok.AllArgsConstructor;
 public class SQLmongoController {
     private final DatasetService datasetService;
     private final QuestionService questionService;
-    private final TestCaseService testCaseService;
     private final ExpectedSolutionService expectedSolutionService;
 
     @GetMapping("/all")
@@ -58,17 +54,7 @@ public class SQLmongoController {
         return questionService.getById(problemId);
     }
 
-    @GetMapping("/problem/{problemId}/testcases")
-    public ResponseEntity<ApiResponse<List<TestCase>>> getPublicTestCases(@PathVariable String problemId) {
-        try {
-            List<TestCase> cases = testCaseService.findTestCasesByTypeAndQuestionId(TestCaseType.PUBLIC, problemId);
-            return ApiResponse.call(HttpStatus.OK, MessageConstants.OK, cases);
-        } catch (Exception e) {
-            return ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, MessageConstants.INTERNAL_SERVER_ERROR, e);
-        }
-    }
-
-    @GetMapping("/problem/{problemId}/expected")
+@GetMapping("/problem/{problemId}/expected")
     public ResponseEntity<ApiResponse<ExpectedSolution.OutputData>> getExpectedOutput(@PathVariable String problemId) {
         try {
             ExpectedSolution sol = expectedSolutionService.getOne(problemId);

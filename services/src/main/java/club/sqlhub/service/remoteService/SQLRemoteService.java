@@ -16,13 +16,18 @@ import club.sqlhub.entity.judge.JudgeServerJobDTO.RunTestcaseResponseDTO;
 import club.sqlhub.entity.judge.JudgeServerJobDTO.SubmissionStatusResponseDTO;
 import club.sqlhub.entity.judge.SQLDTO.SQLInputDTO;
 import club.sqlhub.entity.judge.SQLDTO.SQLPayload;
+import club.sqlhub.entity.judge.SQLDTO.TestCaseEnginePayload;
+import club.sqlhub.mongo.models.Metadata;
 import club.sqlhub.mongo.models.Question;
 import club.sqlhub.mongo.models.TestCaseSQL.TestCase;
+import club.sqlhub.mongo.service.MetadataService;
 import club.sqlhub.mongo.service.QuestionService;
 import club.sqlhub.mongo.service.TestCaseService;
 import club.sqlhub.mongo.service.UserQueriesResultService;
 import club.sqlhub.utils.APiResponse.ApiResponse;
 import club.sqlhub.utils.remoteServiceHelper.RemoteServiceImpl;
+import club.sqlhub.utils.sql.SchemaGenerator;
+import club.sqlhub.utils.sql.SeedGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import java.time.Duration;
@@ -33,6 +38,7 @@ public class SQLRemoteService {
 
     private final QuestionService questionService;
     private final TestCaseService testCaseService;
+    private final MetadataService metadataService;
     private final ObjectMapper objectMapper;
     private final SQLRemoteRepository sqlRemoteRepository;
     private final UserQueriesResultService userQueriesResultService;
@@ -41,6 +47,19 @@ public class SQLRemoteService {
     private static final String JUDGE_QUEUE    = "judge:queue:sql";
     private static final String META_PREFIX    = "meta:sql:";
     private static final long   META_TTL_S     = 3600;
+
+    private List<TestCaseEnginePayload> buildEnginePayloads(List<TestCase> testCases, String datasetId, String sqlMode) {
+        Metadata metadata = metadataService.getByDatasetId(datasetId);
+        String schemaSql = SchemaGenerator.generate(metadata, sqlMode);
+        return testCases.stream()
+                .map(tc -> new TestCaseEnginePayload(
+                        tc.getId(),
+                        schemaSql,
+                        SeedGenerator.generate(tc.getSampleData()),
+                        tc.getNumericTolerance(),
+                        tc.getType()))
+                .collect(java.util.stream.Collectors.toList());
+    }
 
     public ResponseEntity<ApiResponse<SubmissionStatusResponseDTO>> executeQuery(
             SQLInputDTO obj,
@@ -64,8 +83,9 @@ public class SQLRemoteService {
             }
 
             String expectedSql = testCaseService.findExpectedSql(obj.getQuestionId());
+            List<TestCaseEnginePayload> enginePayloads = buildEnginePayloads(testCases, question.getDatasetId(), obj.getSqlMode());
             SQLPayload sqlPayload = new SQLPayload(obj.getQuery(), obj.getQuestionId(), queryType, expectedSql,
-                    testCases, obj.getSqlMode());
+                    enginePayloads, obj.getSqlMode());
 
             String payloadJson = objectMapper.writeValueAsString(sqlPayload);
             jobPayload.setPayload(payloadJson);
@@ -116,9 +136,9 @@ public class SQLRemoteService {
             }
 
             String expectedSql = testCaseService.findExpectedSql(obj.getQuestionId());
-
+            List<TestCaseEnginePayload> enginePayloads = buildEnginePayloads(testCases, question.getDatasetId(), obj.getSqlMode());
             SQLPayload sqlPayload = new SQLPayload(obj.getQuery(), obj.getQuestionId(), queryType, expectedSql,
-                    testCases, obj.getSqlMode());
+                    enginePayloads, obj.getSqlMode());
 
             // payload as string from Testcases
             String payload = objectMapper.writeValueAsString(sqlPayload);

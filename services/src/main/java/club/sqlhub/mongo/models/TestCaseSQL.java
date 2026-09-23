@@ -22,8 +22,6 @@ public class TestCaseSQL {
         @Id
         @Field("_id")
         private String id;
-        private String schemaSql;
-        private String seedSql;
         private Double numericTolerance;
         private String type;
         /** Pre-parsed seed data for public test cases. Null for private TCs.

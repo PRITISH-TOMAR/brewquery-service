@@ -2,9 +2,9 @@ package club.sqlhub.entity.judge;
 
 import java.util.List;
 
-import club.sqlhub.mongo.models.TestCaseSQL.TestCase;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 public class SQLDTO {
@@ -17,6 +17,17 @@ public class SQLDTO {
     }
 
     @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class TestCaseEnginePayload {
+        private String id;
+        private String schemaSql;
+        private String seedSql;
+        private Double numericTolerance;
+        private String type;
+    }
+
+    @Data
     @RequiredArgsConstructor
     @AllArgsConstructor
     public static class SQLPayload {
@@ -24,7 +35,7 @@ public class SQLDTO {
         private String questionId;
         private String type;
         private String expectedSql;
-        private List<TestCase> testCases;
+        private List<TestCaseEnginePayload> testCases;
         private String sqlMode;
     }
 }

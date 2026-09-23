@@ -8,13 +8,16 @@ import org.springframework.stereotype.Service;
 
 import club.sqlhub.constants.MessageConstants;
 import club.sqlhub.entity.Datasets.ProblemDescription;
+import club.sqlhub.entity.Enums.TestCaseType;
 import club.sqlhub.mongo.models.Metadata;
 import club.sqlhub.mongo.models.Question;
+import club.sqlhub.mongo.models.TestCaseSQL.TestCase;
 import club.sqlhub.mongo.repository.MetadataRepository;
 import club.sqlhub.mongo.repository.QuestionRepository;
 import club.sqlhub.utils.APiResponse.ApiResponse;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -24,6 +27,7 @@ public class QuestionService {
 
     private final QuestionRepository repo;
     private final MetadataRepository metaRepo;
+    private final TestCaseService testCaseService;
 
     public Question getByIdRaw(String problemId) {
         return repo.findById(problemId).orElse(null);
@@ -39,17 +43,33 @@ public class QuestionService {
             String dbId = ques.getDatasetId();
             Metadata metadata = metaRepo.findById(dbId).orElse(null);
 
-            if (metadata != null && ques.getTableNames() != null && !ques.getTableNames().isEmpty()) {
-                Set<String> relevant = Set.copyOf(ques.getTableNames());
+            Set<String> relevant = (ques.getTableNames() != null && !ques.getTableNames().isEmpty())
+                    ? Set.copyOf(ques.getTableNames()) : null;
+
+            if (metadata != null && relevant != null) {
                 List<Metadata.TableSchema> filtered = metadata.getTables().stream()
                         .filter(t -> relevant.contains(t.getName()))
                         .collect(Collectors.toList());
                 metadata.setTables(filtered);
             }
 
+            List<TestCase> testCases = testCaseService.findTestCasesByTypeAndQuestionId(TestCaseType.PUBLIC, problemId);
+            if (relevant != null) {
+                for (TestCase tc : testCases) {
+                    if (tc.getSampleData() instanceof List) {
+                        List<?> raw = (List<?>) tc.getSampleData();
+                        List<Object> filteredData = raw.stream()
+                                .filter(e -> e instanceof Map && relevant.contains(((Map<?, ?>) e).get("table")))
+                                .collect(Collectors.toList());
+                        tc.setSampleData(filteredData);
+                    }
+                }
+            }
+
             ProblemDescription res = new ProblemDescription();
             res.setQuestion(ques);
             res.setMetadata(metadata);
+            res.setTestCases(testCases);
 
             return ApiResponse.call(HttpStatus.OK, MessageConstants.OK, res);
         } catch (Exception e) {

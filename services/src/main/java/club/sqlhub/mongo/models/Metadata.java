@@ -27,6 +27,7 @@ public class Metadata {
         private String name;
         private String type;
         private boolean primary;
-        private String foreignKey; 
+        private boolean notNull;
+        private String foreignKey;
     }
 }
