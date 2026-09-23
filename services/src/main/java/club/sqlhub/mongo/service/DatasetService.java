@@ -1,53 +1,52 @@
 package club.sqlhub.mongo.service;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import club.sqlhub.Repository.DatasetSQLRepository;
 import club.sqlhub.constants.MessageConstants;
 import club.sqlhub.entity.Datasets.DatasetPageResponseDTO;
 import club.sqlhub.mongo.models.Dataset;
-import club.sqlhub.mongo.repository.DatasetRepository;
 import club.sqlhub.utils.APiResponse.ApiResponse;
 import lombok.AllArgsConstructor;
 
 @Service
 @AllArgsConstructor
 public class DatasetService {
-    private final DatasetRepository repo;
+
+    private final DatasetSQLRepository repo;
 
     public ResponseEntity<ApiResponse<DatasetPageResponseDTO>> getAll(int page, int size, String search) {
         try {
-            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+            int limit = size;
+            int offset = page * size;
 
-            Page<Dataset> resultPage;
+            List<Dataset> content;
+            long total;
 
             if (search != null && !search.isBlank()) {
-                resultPage = repo.findByTitleContainingIgnoreCase(search, pageable);
+                content = repo.findByTitlePaged(search, limit, offset);
+                total   = repo.countByTitle(search);
             } else {
-                resultPage = repo.findAll(pageable);
+                content = repo.findAllPaged(limit, offset);
+                total   = repo.countAll();
             }
 
-            DatasetPageResponseDTO dto = new DatasetPageResponseDTO(
-                    resultPage.getContent(),
-                    resultPage.getNumber(),
-                    resultPage.getSize(),
-                    resultPage.getTotalElements(),
-                    resultPage.getTotalPages());
-
+            int totalPages = (int) Math.ceil((double) total / size);
+            DatasetPageResponseDTO dto = new DatasetPageResponseDTO(content, page, size, total, totalPages);
             return ApiResponse.call(HttpStatus.OK, MessageConstants.OK, dto);
 
         } catch (Exception e) {
             return ApiResponse.call(HttpStatus.INTERNAL_SERVER_ERROR, MessageConstants.INTERNAL_SERVER_ERROR);
         }
     }
+
     public ResponseEntity<ApiResponse<Dataset>> getById(String dbId) {
         try {
-            Dataset dataset = repo.findById(dbId).orElse(null);
+            Dataset dataset = repo.findById(dbId);
             if (dataset == null) {
                 return ApiResponse.call(HttpStatus.NOT_FOUND, MessageConstants.DATASET_NOT_FOUND);
             }

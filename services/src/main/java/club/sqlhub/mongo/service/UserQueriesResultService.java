@@ -1,17 +1,17 @@
 package club.sqlhub.mongo.service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import club.sqlhub.entity.judge.SubmissionRequestDTO;
+import club.sqlhub.Repository.JudgeResultSQLRepository;
 import club.sqlhub.entity.judge.JudgeServerJobDTO.SubmissionResponseDTO;
+import club.sqlhub.entity.judge.SubmissionRequestDTO;
 import club.sqlhub.mongo.models.JudgeResult.JudgeResultDTO;
-import club.sqlhub.mongo.repository.UserQueriesRepository;
 import club.sqlhub.utils.converter.JudgeResponseConverter;
 import lombok.AllArgsConstructor;
 
@@ -19,11 +19,10 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class UserQueriesResultService {
 
-    private final UserQueriesRepository repo;
+    private final JudgeResultSQLRepository repo;
 
     public JudgeResultDTO findById(String jobId) {
-        JudgeResultDTO res = repo.findByJobId(jobId);
-        return res;
+        return repo.findByJobId(jobId);
     }
 
     public JudgeResultDTO save(JudgeResultDTO result) {
@@ -35,12 +34,21 @@ public class UserQueriesResultService {
     }
 
     public Page<SubmissionResponseDTO> findByFilters(SubmissionRequestDTO req) {
-        Pageable pageable = PageRequest.of(req.getPage(), req.getSize(), 
-    Sort.by(Sort.Direction.DESC, "result.timestamp"));
-        Page<JudgeResultDTO> res = repo.findByFilters(req.getUserId(), req.getJobId(), req.getQuestionId(),
-                req.getFromDate(), req.getToDate(), req.getVerdict(), req.getType(), pageable);
+        int limit  = req.getSize();
+        int offset = req.getPage() * req.getSize();
 
-        return res.map(JudgeResponseConverter::convertJudgeResultToSubmissionResponse);
+        List<JudgeResultDTO> rows = repo.findByFilters(
+                req.getUserId(), req.getJobId(), req.getQuestionId(),
+                req.getFromDate(), req.getToDate(), req.getVerdict(), limit, offset);
+
+        long total = repo.countByFilters(
+                req.getUserId(), req.getJobId(), req.getQuestionId(),
+                req.getFromDate(), req.getToDate(), req.getVerdict());
+
+        List<SubmissionResponseDTO> content = rows.stream()
+                .map(JudgeResponseConverter::convertJudgeResultToSubmissionResponse)
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(content, PageRequest.of(req.getPage(), req.getSize()), total);
     }
-
 }

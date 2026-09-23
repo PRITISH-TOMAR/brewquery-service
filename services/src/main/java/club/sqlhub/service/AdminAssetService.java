@@ -12,11 +12,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+import club.sqlhub.Repository.DatasetSQLRepository;
+import club.sqlhub.Repository.PageAssetsSQLRepository;
 import club.sqlhub.constants.MessageConstants;
 import club.sqlhub.mongo.models.Dataset;
 import club.sqlhub.mongo.models.PageAssets;
-import club.sqlhub.mongo.repository.DatasetRepository;
-import club.sqlhub.mongo.repository.PageAssetsRepository;
 import club.sqlhub.utils.APiResponse.ApiResponse;
 import lombok.RequiredArgsConstructor;
 
@@ -24,9 +24,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AdminAssetService {
 
-    private final DatasetRepository   datasetRepository;
-    private final PageAssetsRepository pageAssetsRepository;
-    private final RestTemplate         restTemplate;
+    private final DatasetSQLRepository    datasetRepository;
+    private final PageAssetsSQLRepository pageAssetsRepository;
+    private final RestTemplate            restTemplate;
 
     @Value("${supabase.storage.base-url}")
     private String supabaseStorageBaseUrl;
@@ -82,18 +82,17 @@ public class AdminAssetService {
             if (file.getSize() > MAX_SIZE)
                 return ApiResponse.call(HttpStatus.BAD_REQUEST, MessageConstants.ASSET_TOO_LARGE);
 
-            Dataset dataset = datasetRepository.findById(datasetId).orElse(null);
+            Dataset dataset = datasetRepository.findById(datasetId);
             if (dataset == null)
                 return ApiResponse.call(HttpStatus.NOT_FOUND, MessageConstants.DATASET_NOT_FOUND);
 
             String publicUrl = uploadToSupabase(file, objectKey);
 
             if ("cover".equals(field)) {
-                dataset.setCoverImage(publicUrl);
+                datasetRepository.updateCoverImage(datasetId, publicUrl);
             } else {
-                dataset.setErImage(publicUrl);
+                datasetRepository.updateErImage(datasetId, publicUrl);
             }
-            datasetRepository.save(dataset);
 
             return ApiResponse.call(HttpStatus.OK, MessageConstants.ASSET_UPLOADED, publicUrl);
         } catch (Exception e) {

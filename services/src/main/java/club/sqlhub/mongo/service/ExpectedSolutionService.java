@@ -1,23 +1,22 @@
 package club.sqlhub.mongo.service;
 
-import lombok.RequiredArgsConstructor;
+import java.util.ArrayList;
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 
+import club.sqlhub.Repository.ExpectedSolutionSQLRepository;
 import club.sqlhub.mongo.models.ExpectedSolution;
-import club.sqlhub.mongo.repository.ExpectedSolutionRepository;
-
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class ExpectedSolutionService {
 
-    private final ExpectedSolutionRepository repo;
+    private final ExpectedSolutionSQLRepository repo;
 
     public ExpectedSolution getOne(String questionId) {
-        return repo.findByQuestionId(questionId)
-                .stream()
-                .findFirst()
-                .orElse(null);
+        return repo.findByQuestionId(questionId).stream().findFirst().orElse(null);
     }
 
     public ExpectedSolution save(ExpectedSolution sol) {
@@ -29,7 +28,7 @@ public class ExpectedSolutionService {
     }
 
     public ExpectedSolution getExact(String id) {
-        return repo.findById(id).orElse(null);
+        return repo.findById(id);
     }
 
     public ExpectedSolution addSolution(String questionId, String sqlMode, ExpectedSolution.SolutionEntry newEntry) {
@@ -37,10 +36,10 @@ public class ExpectedSolutionService {
 
         if (sol == null) {
             sol = new ExpectedSolution();
-            sol.setId(java.util.UUID.randomUUID().toString());
+            sol.setId(UUID.randomUUID().toString());
             sol.setQuestionId(questionId);
             sol.setSqlMode(sqlMode);
-            sol.setSolutions(new java.util.ArrayList<>());
+            sol.setSolutions(new ArrayList<>());
         }
 
         sol.getSolutions().add(newEntry);

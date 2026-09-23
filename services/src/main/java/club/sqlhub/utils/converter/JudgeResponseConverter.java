@@ -30,15 +30,7 @@ public class JudgeResponseConverter {
 
             Object totalExecMs = resultMap.get("totalExecutionMs");
             if (totalExecMs != null) {
-                if (totalExecMs instanceof Map) {
-                    Map<String, Object> execMap = (Map<String, Object>) totalExecMs;
-                    Object numberLong = execMap.get("$numberLong");
-                    if (numberLong != null) {
-                        response.setTimeTaken(numberLong.toString() + " ms");
-                    }
-                } else {
-                    response.setTimeTaken(totalExecMs.toString() + " ms");
-                }
+                response.setTimeTaken(totalExecMs.toString() + " ms");
             }
 
             Object overallStatus = resultMap.get("overallStatus");

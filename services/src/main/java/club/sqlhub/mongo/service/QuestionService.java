@@ -1,47 +1,46 @@
 package club.sqlhub.mongo.service;
 
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import club.sqlhub.Repository.MetadataSQLRepository;
+import club.sqlhub.Repository.QuestionSQLRepository;
 import club.sqlhub.constants.MessageConstants;
 import club.sqlhub.entity.Datasets.ProblemDescription;
 import club.sqlhub.entity.Enums.TestCaseType;
 import club.sqlhub.mongo.models.Metadata;
 import club.sqlhub.mongo.models.Question;
 import club.sqlhub.mongo.models.TestCaseSQL.TestCase;
-import club.sqlhub.mongo.repository.MetadataRepository;
-import club.sqlhub.mongo.repository.QuestionRepository;
 import club.sqlhub.utils.APiResponse.ApiResponse;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class QuestionService {
 
-    private final QuestionRepository repo;
-    private final MetadataRepository metaRepo;
-    private final TestCaseService testCaseService;
+    private final QuestionSQLRepository repo;
+    private final MetadataSQLRepository metaRepo;
+    private final TestCaseService       testCaseService;
 
     public Question getByIdRaw(String problemId) {
-        return repo.findById(problemId).orElse(null);
+        return repo.findById(problemId);
     }
 
     public ResponseEntity<ApiResponse<ProblemDescription>> getById(String problemId) {
         try {
-            Question ques = repo.findById(problemId).orElse(null);
+            Question ques = repo.findById(problemId);
             if (ques == null) {
                 return ApiResponse.call(HttpStatus.NOT_FOUND, MessageConstants.NO_QUESTION_FOUND_FOR_THIS_DATASET);
             }
 
             String dbId = ques.getDatasetId();
-            Metadata metadata = metaRepo.findById(dbId).orElse(null);
+            Metadata metadata = metaRepo.findById(dbId);
 
             Set<String> relevant = (ques.getTableNames() != null && !ques.getTableNames().isEmpty())
                     ? Set.copyOf(ques.getTableNames()) : null;
@@ -80,7 +79,6 @@ public class QuestionService {
     public ResponseEntity<ApiResponse<List<Question>>> getByDataset(String datasetId) {
         try {
             List<Question> res = repo.findByDatasetId(datasetId);
-
             return ApiResponse.call(HttpStatus.OK, MessageConstants.OK, res);
         } catch (Exception e) {
             return ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, MessageConstants.INTERNAL_SERVER_ERROR, e);

@@ -1,6 +1,5 @@
 package club.sqlhub.service;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -9,9 +8,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -21,6 +17,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+import club.sqlhub.Repository.DatasetSQLRepository;
+import club.sqlhub.Repository.JudgeResultSQLRepository;
+import club.sqlhub.Repository.QuestionSQLRepository;
 import club.sqlhub.Repository.UserProfileRepository;
 import club.sqlhub.constants.MessageConstants;
 import club.sqlhub.entity.user.DBO.UserRawProfileDBO;
@@ -28,8 +27,6 @@ import club.sqlhub.entity.user.DTO.profile.*;
 import club.sqlhub.mongo.models.Dataset;
 import club.sqlhub.mongo.models.JudgeResult.JudgeResultDTO;
 import club.sqlhub.mongo.models.Question;
-import club.sqlhub.mongo.repository.DatasetRepository;
-import club.sqlhub.mongo.repository.QuestionRepository;
 import club.sqlhub.utils.APiResponse.ApiResponse;
 import club.sqlhub.utils.User.LevelUtils;
 import lombok.RequiredArgsConstructor;
@@ -38,11 +35,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserService {
 
-    private final UserProfileRepository profileRepo;
-    private final MongoTemplate         mongoTemplate;
-    private final QuestionRepository    questionRepository;
-    private final DatasetRepository     datasetRepository;
-    private final RestTemplate          restTemplate;
+    private final UserProfileRepository   profileRepo;
+    private final JudgeResultSQLRepository judgeResultRepo;
+    private final QuestionSQLRepository   questionRepository;
+    private final DatasetSQLRepository    datasetRepository;
+    private final RestTemplate            restTemplate;
 
     @Value("${supabase.storage.base-url}")
     private String supabaseStorageBaseUrl;
@@ -64,14 +61,11 @@ public class UserService {
 
             List<JudgeResultDTO> allResults = fetchAllResults(userId);
 
-            // Submissions with PASS verdict
             List<JudgeResultDTO> passed = filterByVerdict(allResults, "PASS");
 
-            // questionsSolved = distinct questionIds with PASS
             Set<String> solvedQIds = extractQuestionIds(passed);
             int questionsSolved = solvedQIds.size();
 
-            // datasetsCompleted = distinct datasetIds the user has solved a question in
             int datasetsCompleted = 0;
             if (!solvedQIds.isEmpty()) {
                 datasetsCompleted = (int) questionRepository.findAllById(solvedQIds)
@@ -82,7 +76,6 @@ public class UserService {
                         .count();
             }
 
-            // dayStreak — consecutive days with any submission ending today
             int streak = computeStreak(extractDates(allResults));
 
             LevelDTO level = LevelUtils.compute(allResults.size());
@@ -114,11 +107,11 @@ public class UserService {
             List<JudgeResultDTO> results = filterByPeriod(fetchAllResults(userId), period);
 
             int total   = results.size();
-            int correct = (int) filterByVerdict(results, "PASS").stream().count();
-            int wrong   = (int) filterByVerdict(results, "FAIL").stream().count();
+            int correct = filterByVerdict(results, "PASS").size();
+            int wrong   = filterByVerdict(results, "FAIL").size();
 
             OptionalDouble avgMsOpt = results.stream()
-                    .mapToLong(r -> execMs(r))
+                    .mapToLong(UserService::execMs)
                     .filter(ms -> ms > 0)
                     .average();
 
@@ -126,12 +119,10 @@ public class UserService {
             int    wrongPct   = total > 0 ? (int) Math.round(wrong   * 100.0 / total) : 0;
             String avgTime    = avgMsOpt.isPresent() ? formatAvgTime((long) avgMsOpt.getAsDouble()) : "00:00:00";
 
-            // Collect all unique questionIds across all submissions
             Set<String> allQIds = extractQuestionIds(results);
 
-            // Single MongoDB call → build two lookup maps
-            Map<String, String> qDiffMap    = new HashMap<>();  // questionId → difficulty
-            Map<String, String> qDatasetMap = new HashMap<>();  // questionId → datasetId
+            Map<String, String> qDiffMap    = new HashMap<>();
+            Map<String, String> qDatasetMap = new HashMap<>();
             if (!allQIds.isEmpty()) {
                 questionRepository.findAllById(allQIds).forEach(q -> {
                     qDiffMap.put(q.getId(),
@@ -140,21 +131,19 @@ public class UserService {
                 });
             }
 
-            // Difficulty counts — only correct submissions
             Map<String, Integer> diffCount = new HashMap<>();
             diffCount.put("easy", 0); diffCount.put("medium", 0); diffCount.put("hard", 0);
             filterByVerdict(results, "PASS").forEach(r -> {
-                String qId  = questionId(r);
+                String qId  = r.getQuestionId();
                 String diff = qId != null ? qDiffMap.getOrDefault(qId, "easy") : "easy";
                 diffCount.merge(diff, 1, Integer::sum);
             });
             DifficultyDTO difficulty = new DifficultyDTO(
                     diffCount.get("easy"), diffCount.get("medium"), diffCount.get("hard"));
 
-            // Favourite datasets — ranked by number of correct submissions
             Map<String, Integer> datasetCount = new HashMap<>();
             filterByVerdict(results, "PASS").forEach(r -> {
-                String qId  = questionId(r);
+                String qId  = r.getQuestionId();
                 String dsId = qId != null ? qDatasetMap.get(qId) : null;
                 if (dsId != null) datasetCount.merge(dsId, 1, Integer::sum);
             });
@@ -199,7 +188,6 @@ public class UserService {
 
     public ResponseEntity<ApiResponse<List<UserSubmissionDTO>>> getSubmissions(Integer userId, int limit) {
         try {
-            // Fetch all, sort newest-first in Java (avoids fragile nested-field sort in Mongo)
             List<JudgeResultDTO> results = fetchAllResults(userId);
             results.sort((a, b) -> {
                 LocalDateTime tsA = timestamp(a);
@@ -211,7 +199,6 @@ public class UserService {
             });
             if (results.size() > limit) results = results.subList(0, limit);
 
-            // Resolve questionIds → titles, difficulties, datasetIds
             Set<String> qIds = extractQuestionIds(results);
             Map<String, Question> questionMap = new HashMap<>();
             Set<String> dsIds = new HashSet<>();
@@ -223,7 +210,6 @@ public class UserService {
                 });
             }
 
-            // Resolve datasetIds → names
             Map<String, String> datasetNameMap = new HashMap<>();
             if (!dsIds.isEmpty()) {
                 datasetRepository.findAllById(dsIds)
@@ -231,15 +217,14 @@ public class UserService {
             }
 
             List<UserSubmissionDTO> submissions = results.stream().map(r -> {
-                Map<String, Object> rm  = toMap(r.getResult());
-                String qId              = (String) rm.get("questionId");
-                Question q              = questionMap.get(qId);
-                String overallStatus    = (String) rm.get("overallStatus");
+                String qId           = r.getQuestionId();
+                Question q           = questionMap.get(qId);
+                String overallStatus = overallStatus(r);
 
                 String datasetName = null;
-                String difficulty  = null;
+                String diff        = null;
                 if (q != null) {
-                    difficulty = q.getDifficulty();
+                    diff       = q.getDifficulty();
                     datasetName = datasetNameMap.get(q.getDatasetId());
                 }
 
@@ -247,7 +232,7 @@ public class UserService {
                 sub.setId(r.getJobId());
                 sub.setQuestionTitle(q != null ? q.getTitle() : (qId != null ? qId : "—"));
                 sub.setDataset(datasetName != null ? datasetName : "Unknown");
-                sub.setLevel(difficulty != null ? capitalize(difficulty) : "—");
+                sub.setLevel(diff != null ? capitalize(diff) : "—");
                 sub.setLanguage("SQL");
                 sub.setTimeTaken(formatTimeTaken(execMs(r)));
                 sub.setSubmittedAt(timestamp(r) != null ? formatSubmittedAt(timestamp(r)) : "—");
@@ -267,9 +252,9 @@ public class UserService {
     public ResponseEntity<ApiResponse<List<HeatmapEntryDTO>>> getHeatmap(Integer userId) {
         try {
             List<HeatmapEntryDTO> heatmap = fetchAllResults(userId).stream()
-                    .map(r -> timestamp(r))
+                    .map(UserService::timestamp)
                     .filter(Objects::nonNull)
-                    .map(ts -> ts.toLocalDate().toString())          // "YYYY-MM-DD"
+                    .map(ts -> ts.toLocalDate().toString())
                     .collect(Collectors.groupingBy(d -> d, Collectors.counting()))
                     .entrySet().stream()
                     .map(e -> new HeatmapEntryDTO(e.getKey(), e.getValue().intValue()))
@@ -292,7 +277,7 @@ public class UserService {
             if (file.getSize() > 2 * 1024 * 1024)
                 return ApiResponse.call(HttpStatus.BAD_REQUEST, MessageConstants.AVATAR_TOO_LARGE);
 
-            String base = supabaseStorageBaseUrl.replaceAll("/+$", ""); // strip trailing slash
+            String base = supabaseStorageBaseUrl.replaceAll("/+$", "");
             String storageUrl = base + "/object/" + storageBucket + "/" + userId;
 
             HttpHeaders headers = new HttpHeaders();
@@ -318,62 +303,48 @@ public class UserService {
     // ── Internal helpers ──────────────────────────────────────────────────────
 
     private List<JudgeResultDTO> fetchAllResults(Integer userId) {
-        Query q = new Query(Criteria.where("userId").is(String.valueOf(userId)));
-        return mongoTemplate.find(q, JudgeResultDTO.class);
+        return judgeResultRepo.findByUserId(String.valueOf(userId));
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<String, Object> toMap(Object result) {
-        if (result instanceof Map) return (Map<String, Object>) result;
+    private static Map<String, Object> toResultMap(JudgeResultDTO r) {
+        if (r.getResult() instanceof Map) return (Map<String, Object>) r.getResult();
         return Collections.emptyMap();
     }
 
-    private static String questionId(JudgeResultDTO r) {
-        return (String) toMap(r.getResult()).get("questionId");
+    private static String overallStatus(JudgeResultDTO r) {
+        Object status = toResultMap(r).get("overallStatus");
+        return status != null ? status.toString() : null;
     }
 
     private static long execMs(JudgeResultDTO r) {
-        Object ms = toMap(r.getResult()).get("totalExecutionMs");
+        Object ms = toResultMap(r).get("totalExecutionMs");
         return ms instanceof Number ? ((Number) ms).longValue() : 0L;
     }
 
     private static LocalDateTime timestamp(JudgeResultDTO r) {
-        return extractTimestamp(toMap(r.getResult()).get("timestamp"));
-    }
-
-    private static LocalDateTime extractTimestamp(Object ts) {
-        if (ts == null) return null;
-        if (ts instanceof java.util.Date)
-            return ((java.util.Date) ts).toInstant().atZone(ZoneId.of("UTC")).toLocalDateTime();
-        if (ts instanceof Long)
-            return Instant.ofEpochMilli((Long) ts).atZone(ZoneId.of("UTC")).toLocalDateTime();
-        if (ts instanceof Map) {
-            Object d = ((Map<?, ?>) ts).get("$date");
-            if (d instanceof String) {
-                try { return Instant.parse((String) d).atZone(ZoneId.of("UTC")).toLocalDateTime(); }
-                catch (Exception ignored) { return null; }
-            }
+        if (r.getSubmittedAt() != null) {
+            return r.getSubmittedAt().toInstant().atZone(ZoneId.of("UTC")).toLocalDateTime();
         }
-        try { return LocalDateTime.parse(ts.toString(), DateTimeFormatter.ISO_DATE_TIME); }
-        catch (Exception ignored) { return null; }
+        return null;
     }
 
     private static List<JudgeResultDTO> filterByVerdict(List<JudgeResultDTO> list, String verdict) {
         return list.stream()
-                .filter(r -> verdict.equals(toMap(r.getResult()).get("overallStatus")))
+                .filter(r -> verdict.equals(overallStatus(r)))
                 .collect(Collectors.toList());
     }
 
     private static Set<String> extractQuestionIds(List<JudgeResultDTO> list) {
         return list.stream()
-                .map(UserService::questionId)
+                .map(JudgeResultDTO::getQuestionId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
     }
 
     private static List<LocalDate> extractDates(List<JudgeResultDTO> results) {
         return results.stream()
-                .map(r -> timestamp(r))
+                .map(UserService::timestamp)
                 .filter(Objects::nonNull)
                 .map(LocalDateTime::toLocalDate)
                 .distinct()
@@ -381,11 +352,9 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    /** Consecutive days ending today (or yesterday if no submission today). */
     private static int computeStreak(List<LocalDate> sortedDesc) {
         if (sortedDesc.isEmpty()) return 0;
         LocalDate expected = LocalDate.now();
-        // Allow streak if last submission was yesterday
         if (!sortedDesc.get(0).equals(expected)) expected = expected.minusDays(1);
         int streak = 0;
         for (LocalDate d : sortedDesc) {

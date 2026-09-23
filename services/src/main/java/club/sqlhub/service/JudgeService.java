@@ -12,13 +12,13 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import club.sqlhub.Repository.DatasetSQLRepository;
 import club.sqlhub.entity.judge.JudgeServerJobDTO.RunTestcaseResponseDTO;
 import club.sqlhub.entity.judge.JudgeServerJobDTO.SubmissionResponseDTO;
 import club.sqlhub.entity.judge.SubmissionRequestDTO;
 import club.sqlhub.mongo.models.Dataset;
 import club.sqlhub.mongo.models.JudgeResult.JudgeResultDTO;
 import club.sqlhub.mongo.models.Question;
-import club.sqlhub.mongo.repository.DatasetRepository;
 import club.sqlhub.mongo.service.QuestionService;
 import club.sqlhub.mongo.service.UserQueriesResultService;
 import club.sqlhub.utils.APiResponse.ApiResponse;
@@ -29,51 +29,48 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 @Service
 @AllArgsConstructor
 public class JudgeService {
+
     private final UserQueriesResultService userQueriesResultService;
-    private final StringRedisTemplate stringRedisTemplate;
-    private final ObjectMapper objectMapper;
-    private final QuestionService questionService;
-    private final DatasetRepository datasetRepository;
+    private final StringRedisTemplate      stringRedisTemplate;
+    private final ObjectMapper             objectMapper;
+    private final QuestionService          questionService;
+    private final DatasetSQLRepository     datasetRepository;
 
     private static final String RESULT_PREFIX = "result:sql:";
     private static final String META_PREFIX   = "meta:sql:";
 
     public ResponseEntity<ApiResponse<SubmissionResponseDTO>> expectedOutput(String jobId) {
         try {
-            // 1. Check Redis — engine worker writes result here
             String resultJson = stringRedisTemplate.opsForValue().get(RESULT_PREFIX + jobId);
 
             if (resultJson != null) {
                 RunTestcaseResponseDTO runResult =
                         objectMapper.readValue(resultJson, RunTestcaseResponseDTO.class);
 
-                // Parse meta JSON for userId + questionId
-                String userId = null;
+                String userId     = null;
                 String questionId = null;
-                String metaJson = stringRedisTemplate.opsForValue().get(META_PREFIX + jobId);
+                String metaJson   = stringRedisTemplate.opsForValue().get(META_PREFIX + jobId);
                 if (metaJson != null) {
                     try {
                         Map<String, String> meta = objectMapper.readValue(metaJson, new TypeReference<>() {});
-                        userId = meta.get("userId");
+                        userId     = meta.get("userId");
                         questionId = meta.get("questionId");
                     } catch (Exception ignored) {
-                        userId = metaJson; // legacy plain-string fallback
+                        userId = metaJson;
                     }
                 }
 
-                // Enrich with question + dataset info
                 String questionTitle = null, datasetTitle = null, level = null;
                 if (questionId != null) {
                     Question q = questionService.getByIdRaw(questionId);
                     if (q != null) {
                         questionTitle = q.getTitle();
-                        level = q.getDifficulty();
-                        Dataset ds = datasetRepository.findById(q.getDatasetId()).orElse(null);
+                        level         = q.getDifficulty();
+                        Dataset ds    = datasetRepository.findById(q.getDatasetId());
                         if (ds != null) datasetTitle = ds.getTitle();
                     }
                 }
 
-                // Persist to MongoDB for history (upsert — jobId is @Id)
                 JudgeResultDTO dto = new JudgeResultDTO();
                 dto.setJobId(jobId);
                 dto.setUserId(userId);
@@ -97,7 +94,6 @@ public class JudgeService {
                 return ApiResponse.call(HttpStatus.OK, "Job result fetched successfully", response);
             }
 
-            // 2. Fallback — already persisted to MongoDB (Redis TTL expired)
             JudgeResultDTO persisted = userQueriesResultService.findById(jobId);
             if (persisted != null && persisted.getResult() != null) {
                 SubmissionResponseDTO response =
@@ -105,7 +101,6 @@ public class JudgeService {
                 return ApiResponse.call(HttpStatus.OK, "Job result fetched successfully", response);
             }
 
-            // 3. Still processing
             SubmissionResponseDTO pending = new SubmissionResponseDTO();
             pending.setResult("PENDING");
             return ApiResponse.call(HttpStatus.OK, "Job still processing", pending);
@@ -141,12 +136,8 @@ public class JudgeService {
     public ResponseEntity<ApiResponse<List<SubmissionResponseDTO>>> findSubmissionsPerUserByFilters(SubmissionRequestDTO req) {
         try {
             Page<SubmissionResponseDTO> judgeResultDTO = userQueriesResultService.findByFilters(req);
-
             List<SubmissionResponseDTO> list = judgeResultDTO.getContent();
-            return ApiResponse.call(
-                    HttpStatus.OK,
-                    "Submissions fetched successfully",
-                    list);
+            return ApiResponse.call(HttpStatus.OK, "Submissions fetched successfully", list);
         } catch (Exception ex) {
             return ApiResponse.error(
                     HttpStatus.INTERNAL_SERVER_ERROR,
@@ -154,5 +145,4 @@ public class JudgeService {
                     ex);
         }
     }
-
 }

@@ -1,19 +1,19 @@
 package club.sqlhub.mongo.service;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import club.sqlhub.Repository.MetadataSQLRepository;
 import club.sqlhub.mongo.models.Metadata;
-import club.sqlhub.mongo.repository.MetadataRepository;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class MetadataService {
 
-    private final MetadataRepository repo;
+    private final MetadataSQLRepository repo;
 
     public Metadata getByDatasetId(String datasetId) {
-        return repo.findById(datasetId).orElse(null);
+        return repo.findById(datasetId);
     }
 
     public Metadata save(Metadata metadata) {

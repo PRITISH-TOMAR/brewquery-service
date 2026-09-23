@@ -11,8 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import club.sqlhub.constants.MessageConstants;
-import club.sqlhub.mongo.models.PageAssets;
-import club.sqlhub.mongo.repository.PageAssetsRepository;
+import club.sqlhub.Repository.PageAssetsSQLRepository;
 import club.sqlhub.utils.APiResponse.ApiResponse;
 import lombok.AllArgsConstructor;
 
@@ -21,7 +20,7 @@ import lombok.AllArgsConstructor;
 @RequestMapping("/config")
 public class ConfigController {
 
-    private final PageAssetsRepository pageAssetsRepository;
+    private final PageAssetsSQLRepository pageAssetsRepository;
 
     /** Frontend uses this for difficulty level labels and colours. */
     @GetMapping("/dataset-grid")
