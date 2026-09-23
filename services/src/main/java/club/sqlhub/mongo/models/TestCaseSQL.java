@@ -2,10 +2,6 @@ package club.sqlhub.mongo.models;
 
 import java.util.List;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import club.sqlhub.entity.Enums.TestCaseType;
@@ -19,8 +15,6 @@ public class TestCaseSQL {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class TestCase {
-        @Id
-        @Field("_id")
         private String id;
         private Double numericTolerance;
         private String type;
@@ -33,10 +27,8 @@ public class TestCaseSQL {
         private Object expectedOutput;
     }
 
-    @Document(collection = "testcases")
     @Data
     public static class TestCases {
-        @Id
         private String id;
         private String questionId;
         @JsonProperty("type")
