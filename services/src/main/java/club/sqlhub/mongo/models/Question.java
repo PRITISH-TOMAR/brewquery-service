@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 @Document(collection = "questions")
@@ -21,5 +22,7 @@ public class Question {
     private String difficulty;
     private List<String> tags;
     private String type;
+    @JsonIgnore
+    private List<String> tableNames;
     private LocalDateTime createdAt = LocalDateTime.now();
 }

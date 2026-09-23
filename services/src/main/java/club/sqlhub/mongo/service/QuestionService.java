@@ -15,6 +15,8 @@ import club.sqlhub.mongo.repository.QuestionRepository;
 import club.sqlhub.utils.APiResponse.ApiResponse;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +38,14 @@ public class QuestionService {
 
             String dbId = ques.getDatasetId();
             Metadata metadata = metaRepo.findById(dbId).orElse(null);
+
+            if (metadata != null && ques.getTableNames() != null && !ques.getTableNames().isEmpty()) {
+                Set<String> relevant = Set.copyOf(ques.getTableNames());
+                List<Metadata.TableSchema> filtered = metadata.getTables().stream()
+                        .filter(t -> relevant.contains(t.getName()))
+                        .collect(Collectors.toList());
+                metadata.setTables(filtered);
+            }
 
             ProblemDescription res = new ProblemDescription();
             res.setQuestion(ques);
