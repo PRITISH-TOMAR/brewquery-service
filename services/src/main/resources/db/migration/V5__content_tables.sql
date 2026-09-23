@@ -1,6 +1,6 @@
 -- ── DATASETS ─────────────────────────────────────────────────────────────────
 CREATE TABLE datasets (
-    id                  VARCHAR(50)  PRIMARY KEY,
+    id                  BIGSERIAL    PRIMARY KEY,
     slug                VARCHAR(100) UNIQUE,
     title               VARCHAR(500) NOT NULL,
     description         TEXT,
@@ -21,8 +21,8 @@ CREATE TABLE datasets (
 
 -- ── QUESTIONS ────────────────────────────────────────────────────────────────
 CREATE TABLE questions (
-    id          VARCHAR(50)  PRIMARY KEY,
-    dataset_id  VARCHAR(50)  NOT NULL REFERENCES datasets(id),
+    id          BIGSERIAL    PRIMARY KEY,
+    dataset_id  BIGINT       NOT NULL REFERENCES datasets(id),
     title       VARCHAR(500) NOT NULL,
     question    TEXT,
     difficulty  VARCHAR(50),
@@ -36,29 +36,29 @@ CREATE INDEX idx_questions_dataset_id ON questions(dataset_id);
 
 -- ── METADATA ─────────────────────────────────────────────────────────────────
 CREATE TABLE metadata (
-    id     VARCHAR(50) PRIMARY KEY,
-    tables JSONB       NOT NULL DEFAULT '[]'
+    id          BIGSERIAL   PRIMARY KEY,
+    dataset_id  BIGINT      NOT NULL UNIQUE REFERENCES datasets(id),
+    tables      JSONB       NOT NULL DEFAULT '[]'
 );
 
 -- ── TEST_CASE_GROUPS ─────────────────────────────────────────────────────────
 CREATE TABLE test_case_groups (
-    id           VARCHAR(50) PRIMARY KEY,
-    question_id  VARCHAR(50) NOT NULL REFERENCES questions(id),
+    id           BIGSERIAL  PRIMARY KEY,
+    question_id  BIGINT     NOT NULL UNIQUE REFERENCES questions(id),
     type         VARCHAR(50),
     expected_sql TEXT,
-    test_cases   JSONB       NOT NULL DEFAULT '[]'
+    test_cases   JSONB      NOT NULL DEFAULT '[]'
 );
-
-CREATE INDEX idx_tcg_question_id ON test_case_groups(question_id);
 
 -- ── EXPECTED_SOLUTIONS ────────────────────────────────────────────────────────
 CREATE TABLE expected_solutions (
-    id          VARCHAR(50) PRIMARY KEY,
-    question_id VARCHAR(50) NOT NULL REFERENCES questions(id),
-    dataset_id  VARCHAR(50) NOT NULL REFERENCES datasets(id),
+    id          BIGSERIAL  PRIMARY KEY,
+    question_id BIGINT     NOT NULL REFERENCES questions(id),
+    dataset_id  BIGINT     NOT NULL REFERENCES datasets(id),
     sql_mode    VARCHAR(50),
-    solutions   JSONB       NOT NULL DEFAULT '[]',
-    created_at  TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP
+    solutions   JSONB      NOT NULL DEFAULT '[]',
+    created_at  TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (question_id, sql_mode)
 );
 
 CREATE INDEX idx_es_question_id ON expected_solutions(question_id);
@@ -66,7 +66,7 @@ CREATE INDEX idx_es_dataset_id  ON expected_solutions(dataset_id);
 
 -- ── PAGE_ASSETS ───────────────────────────────────────────────────────────────
 CREATE TABLE page_assets (
-    id              VARCHAR(50)  PRIMARY KEY,
+    id              BIGSERIAL    PRIMARY KEY,
     page_key        VARCHAR(100) NOT NULL UNIQUE,
     hero_image_url  TEXT,
     updated_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP

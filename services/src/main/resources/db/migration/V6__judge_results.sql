@@ -1,5 +1,6 @@
 CREATE TABLE judge_results (
-    job_id         VARCHAR(100) PRIMARY KEY,
+    id             BIGSERIAL    PRIMARY KEY,
+    job_id         VARCHAR(100) NOT NULL UNIQUE,
     user_id        VARCHAR(50),
     question_id    VARCHAR(50),
     question_title TEXT,
@@ -10,6 +11,7 @@ CREATE TABLE judge_results (
     result         JSONB
 );
 
+CREATE INDEX idx_jr_job_id      ON judge_results(job_id);
 CREATE INDEX idx_jr_user_id     ON judge_results(user_id);
 CREATE INDEX idx_jr_question_id ON judge_results(question_id);
 CREATE INDEX idx_jr_submitted   ON judge_results(submitted_at DESC);

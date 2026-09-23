@@ -6,31 +6,36 @@ import org.springframework.stereotype.Component;
 public class QuestionQueries {
 
     private static final String SELECT = """
-            SELECT id, dataset_id AS datasetId, title, question, difficulty,
+            SELECT id::TEXT AS id, dataset_id::TEXT AS datasetId, title, question, difficulty,
                    tags::TEXT AS tags, type, table_names::TEXT AS tableNames,
                    created_at AS createdAt
             FROM questions
             """;
 
-    public final String FIND_BY_ID = SELECT + "WHERE id = ?";
+    public final String FIND_BY_ID = SELECT + "WHERE id = CAST(? AS BIGINT)";
 
-    public final String FIND_BY_DATASET_ID = SELECT + "WHERE dataset_id = ?";
+    public final String FIND_BY_DATASET_ID = SELECT + "WHERE dataset_id = CAST(? AS BIGINT)";
 
-    public final String UPSERT = """
+    public final String FIND_ALL_BY_IDS = SELECT + "WHERE id = ANY(CAST(? AS BIGINT[]))";
+
+    public final String INSERT = """
             INSERT INTO questions
-                (id, dataset_id, title, question, difficulty, tags, type, table_names, created_at)
-            VALUES (?, ?, ?, ?, ?, ?::JSONB, ?, ?::JSONB, ?)
-            ON CONFLICT (id) DO UPDATE SET
-                dataset_id  = EXCLUDED.dataset_id,
-                title       = EXCLUDED.title,
-                question    = EXCLUDED.question,
-                difficulty  = EXCLUDED.difficulty,
-                tags        = EXCLUDED.tags,
-                type        = EXCLUDED.type,
-                table_names = EXCLUDED.table_names
+                (dataset_id, title, question, difficulty, tags, type, table_names, created_at)
+            VALUES (CAST(? AS BIGINT), ?, ?, ?, ?::JSONB, ?, ?::JSONB, ?)
+            RETURNING id::TEXT AS id
             """;
 
-    public final String FIND_ALL_BY_IDS = SELECT + "WHERE id = ANY(?)";
+    public final String UPDATE = """
+            UPDATE questions SET
+                dataset_id  = CAST(? AS BIGINT),
+                title       = ?,
+                question    = ?,
+                difficulty  = ?,
+                tags        = ?::JSONB,
+                type        = ?,
+                table_names = ?::JSONB
+            WHERE id = CAST(? AS BIGINT)
+            """;
 
-    public final String DELETE_BY_ID = "DELETE FROM questions WHERE id = ?";
+    public final String DELETE_BY_ID = "DELETE FROM questions WHERE id = CAST(? AS BIGINT)";
 }
