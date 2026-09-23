@@ -73,6 +73,9 @@ services:
       JUDGE_RUN_TESTCASES_URL: http://brewquery-engine:8081/jobs/test
     ports:
       - "8080:8080"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     networks:
       - sqlhub-net
     depends_on:
