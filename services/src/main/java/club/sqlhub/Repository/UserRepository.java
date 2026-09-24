@@ -30,7 +30,7 @@ public class UserRepository {
                 addQuery,
                 new BeanPropertyRowMapper<>(UserDetailsDTO.class),
                 user.getFirstName(), user.getLastName(), user.getEmail(), user.getStatus(),
-                user.getRoleId(), user.getPhoneNumber(), user.getCountryCode(), user.getProfilePictureUrl(),
+                user.getRole(), user.getPhoneNumber(), user.getCountryCode(), user.getProfilePictureUrl(),
                 user.getHashedPassword(), user.getSalt());
     }
 

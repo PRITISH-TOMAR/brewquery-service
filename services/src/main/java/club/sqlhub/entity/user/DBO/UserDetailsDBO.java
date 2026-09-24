@@ -21,9 +21,7 @@ public class UserDetailsDBO {
 
     private String status = AppConstants.DEFAULT_STATUS;
 
-    private Integer roleId = AppConstants.DEFAULT_ROLE_ID;
-
-    private String roleName;
+    private String role = AppConstants.DEFAULT_ROLE;
 
     private String phoneNumber;
 

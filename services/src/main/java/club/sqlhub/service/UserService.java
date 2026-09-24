@@ -83,7 +83,7 @@ public class UserService {
             UserProfileResponseDTO dto = new UserProfileResponseDTO();
             dto.setUserId(raw.getUserId());
             dto.setName(raw.getFirstName() + " " + raw.getLastName());
-            dto.setRole(toDisplayRole(raw.getRoleName()));
+            dto.setRole(toDisplayRole(raw.getRole()));
             dto.setEmail(raw.getEmail());
             dto.setPhone(buildPhone(raw.getCountryCode(), raw.getPhoneNumber()));
             dto.setJoinedAt(formatJoinedAt(raw.getCreatedAt()));
@@ -410,8 +410,9 @@ public class UserService {
     private static String toDisplayRole(String roleName) {
         if (roleName == null) return "Learner";
         return switch (roleName.toUpperCase()) {
-            case "ADMIN" -> "Admin";
-            default      -> "Learner";
+            case "SUPERADMIN" -> "Super Admin";
+            case "ADMIN"      -> "Admin";
+            default           -> "Learner";
         };
     }
 }

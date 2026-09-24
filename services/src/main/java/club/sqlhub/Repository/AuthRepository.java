@@ -34,7 +34,7 @@ public class AuthRepository {
                 user.getLastName(),
                 user.getEmail(),
                 user.getStatus(),
-                user.getRoleId(),
+                user.getRole(),
                 user.getPhoneNumber(),
                 user.getCountryCode(),
                 user.getProfilePictureUrl(),

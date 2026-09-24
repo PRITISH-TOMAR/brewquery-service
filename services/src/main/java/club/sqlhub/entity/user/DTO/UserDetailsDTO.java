@@ -24,4 +24,6 @@ public class UserDetailsDTO {
 
     private String profilePictureUrl;
 
+    private String role;
+
 }

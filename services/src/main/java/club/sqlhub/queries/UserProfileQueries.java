@@ -15,9 +15,8 @@ public class UserProfileQueries {
                 ud.country_code        AS countryCode,
                 ud.profile_picture_url AS profilePictureUrl,
                 ud.created_at          AS createdAt,
-                ur.role_name           AS roleName
+                ud.role                AS role
             FROM user_details ud
-            JOIN user_roles   ur ON ud.role_id = ur.role_id
             WHERE ud.user_id = ?
             """;
 

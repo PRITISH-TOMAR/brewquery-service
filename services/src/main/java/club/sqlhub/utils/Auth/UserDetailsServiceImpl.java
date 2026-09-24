@@ -30,7 +30,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
         UserDetailsDBO user = userList.get(0);
 
-        String role = "ROLE_" + user.getRoleName().toUpperCase();
+        String role = "ROLE_" + user.getRole().toUpperCase();
 
         var authorities = org.springframework.security.core.authority.AuthorityUtils.createAuthorityList(role);
         return new UserPrincipal(String.valueOf(user.getUserId()), user.getHashedPassword(), authorities);

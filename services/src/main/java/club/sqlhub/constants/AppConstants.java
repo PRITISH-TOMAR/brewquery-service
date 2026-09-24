@@ -21,7 +21,7 @@ public class AppConstants {
 
     // USER ENTITIES CONSTANTS
     public static String DEFAULT_STATUS = "ACTIVE";
-    public static Integer DEFAULT_ROLE_ID = 1;
+    public static String DEFAULT_ROLE = "USER";
     public static String DEFAULT_PROFILE_PICTURE_PATH = "";
 
     // JWT

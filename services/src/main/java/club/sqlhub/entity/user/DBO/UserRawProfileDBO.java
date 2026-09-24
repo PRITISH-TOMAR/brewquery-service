@@ -18,5 +18,5 @@ public class UserRawProfileDBO {
     private String  bio;
     private String  location;
     private Timestamp createdAt;
-    private String  roleName;
+    private String  role;
 }
