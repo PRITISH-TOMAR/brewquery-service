@@ -1,5 +1,7 @@
 package club.sqlhub.service;
 
+import java.util.List;
+
 import club.sqlhub.Repository.AdminManagementRepository;
 import club.sqlhub.Repository.DatasetSQLRepository;
 import club.sqlhub.Repository.ExpectedSolutionSQLRepository;
@@ -283,6 +285,28 @@ public class AdminContentService {
 
             solutionRepo.deleteById(id);
             return ApiResponse.call(HttpStatus.OK, MessageConstants.CONTENT_DELETED);
+        } catch (Exception e) {
+            return ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, MessageConstants.INTERNAL_SERVER_ERROR, e);
+        }
+    }
+
+    // ── Fetch by question (admin reads) ──────────────────────────────────────
+
+    public ResponseEntity<ApiResponse<TestCases>> getTestCaseByQuestion(String questionId) {
+        try {
+            TestCases tc = testCaseRepo.findByQuestionId(questionId).orElse(null);
+            if (tc == null)
+                return ApiResponse.call(HttpStatus.NOT_FOUND, MessageConstants.TESTCASE_NOT_FOUND);
+            return ApiResponse.call(HttpStatus.OK, MessageConstants.OK, tc);
+        } catch (Exception e) {
+            return ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, MessageConstants.INTERNAL_SERVER_ERROR, e);
+        }
+    }
+
+    public ResponseEntity<ApiResponse<List<ExpectedSolution>>> getSolutionsByQuestion(String questionId) {
+        try {
+            List<ExpectedSolution> solutions = solutionRepo.findByQuestionId(questionId);
+            return ApiResponse.call(HttpStatus.OK, MessageConstants.OK, solutions);
         } catch (Exception e) {
             return ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, MessageConstants.INTERNAL_SERVER_ERROR, e);
         }

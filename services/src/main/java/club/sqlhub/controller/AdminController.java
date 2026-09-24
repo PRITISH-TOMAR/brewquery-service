@@ -20,6 +20,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+
+
 @RestController
 @AllArgsConstructor
 @RequestMapping("/admin")
@@ -82,6 +84,20 @@ public class AdminController {
             @PathVariable String pageKey,
             @RequestParam("file") MultipartFile file) {
         return adminAssetService.uploadPageHero(pageKey, file);
+    }
+
+    // ── Content reads (admin) ─────────────────────────────────────────────────
+
+    @GetMapping("/content/testcase/by-question/{questionId}")
+    public ResponseEntity<ApiResponse<TestCases>> getTestCaseByQuestion(
+            @PathVariable String questionId) {
+        return adminContentService.getTestCaseByQuestion(questionId);
+    }
+
+    @GetMapping("/content/solution/by-question/{questionId}")
+    public ResponseEntity<ApiResponse<List<ExpectedSolution>>> getSolutionsByQuestion(
+            @PathVariable String questionId) {
+        return adminContentService.getSolutionsByQuestion(questionId);
     }
 
     // ── Content management ────────────────────────────────────────────────────
