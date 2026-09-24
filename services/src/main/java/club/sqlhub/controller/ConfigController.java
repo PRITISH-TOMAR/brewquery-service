@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import club.sqlhub.constants.MessageConstants;
 import club.sqlhub.Repository.PageAssetsSQLRepository;
+import club.sqlhub.entity.config.ConfigResponseDTO;
+import club.sqlhub.service.ConfigService;
 import club.sqlhub.utils.APiResponse.ApiResponse;
 import lombok.AllArgsConstructor;
 
@@ -21,6 +23,13 @@ import lombok.AllArgsConstructor;
 public class ConfigController {
 
     private final PageAssetsSQLRepository pageAssetsRepository;
+    private final ConfigService configService;
+
+    /** Returns resolved module permissions and admin scope for the authenticated user. */
+    @GetMapping
+    public ResponseEntity<ApiResponse<ConfigResponseDTO>> getConfig() {
+        return configService.getConfig();
+    }
 
     /** Frontend uses this for difficulty level labels and colours. */
     @GetMapping("/dataset-grid")
