@@ -2,7 +2,12 @@ package club.sqlhub.controller;
 
 import club.sqlhub.entity.admin.request.*;
 import club.sqlhub.entity.admin.response.*;
+import club.sqlhub.mongo.models.Dataset;
+import club.sqlhub.mongo.models.ExpectedSolution;
+import club.sqlhub.mongo.models.Question;
+import club.sqlhub.mongo.models.TestCaseSQL.TestCases;
 import club.sqlhub.service.AdminAssetService;
+import club.sqlhub.service.AdminContentService;
 import club.sqlhub.service.AdminManagementService;
 import club.sqlhub.utils.APiResponse.ApiResponse;
 import jakarta.validation.Valid;
@@ -23,6 +28,7 @@ public class AdminController {
 
     private final AdminAssetService      adminAssetService;
     private final AdminManagementService adminManagementService;
+    private final AdminContentService    adminContentService;
 
     // ── User management ───────────────────────────────────────────────────────
 
@@ -76,5 +82,79 @@ public class AdminController {
             @PathVariable String pageKey,
             @RequestParam("file") MultipartFile file) {
         return adminAssetService.uploadPageHero(pageKey, file);
+    }
+
+    // ── Content management ────────────────────────────────────────────────────
+
+    @PostMapping("/content/dataset")
+    public ResponseEntity<ApiResponse<Dataset>> createDataset(
+            @Valid @RequestBody AdminDatasetRequestDTO req) {
+        return adminContentService.createDataset(req);
+    }
+
+    @PutMapping("/content/dataset/{id}")
+    public ResponseEntity<ApiResponse<Dataset>> updateDataset(
+            @PathVariable String id,
+            @Valid @RequestBody AdminDatasetRequestDTO req) {
+        return adminContentService.updateDataset(id, req);
+    }
+
+    @DeleteMapping("/content/dataset/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteDataset(@PathVariable String id) {
+        return adminContentService.deleteDataset(id);
+    }
+
+    @PostMapping("/content/question")
+    public ResponseEntity<ApiResponse<Question>> createQuestion(
+            @Valid @RequestBody AdminQuestionRequestDTO req) {
+        return adminContentService.createQuestion(req);
+    }
+
+    @PutMapping("/content/question/{id}")
+    public ResponseEntity<ApiResponse<Question>> updateQuestion(
+            @PathVariable String id,
+            @Valid @RequestBody AdminQuestionRequestDTO req) {
+        return adminContentService.updateQuestion(id, req);
+    }
+
+    @DeleteMapping("/content/question/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteQuestion(@PathVariable String id) {
+        return adminContentService.deleteQuestion(id);
+    }
+
+    @PostMapping("/content/testcase")
+    public ResponseEntity<ApiResponse<TestCases>> createTestCase(
+            @Valid @RequestBody AdminTestCaseGroupRequestDTO req) {
+        return adminContentService.createTestCase(req);
+    }
+
+    @PutMapping("/content/testcase/{id}")
+    public ResponseEntity<ApiResponse<TestCases>> updateTestCase(
+            @PathVariable String id,
+            @Valid @RequestBody AdminTestCaseGroupRequestDTO req) {
+        return adminContentService.updateTestCase(id, req);
+    }
+
+    @DeleteMapping("/content/testcase/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteTestCase(@PathVariable String id) {
+        return adminContentService.deleteTestCase(id);
+    }
+
+    @PostMapping("/content/solution")
+    public ResponseEntity<ApiResponse<ExpectedSolution>> createSolution(
+            @Valid @RequestBody AdminExpectedSolutionRequestDTO req) {
+        return adminContentService.createSolution(req);
+    }
+
+    @PutMapping("/content/solution/{id}")
+    public ResponseEntity<ApiResponse<ExpectedSolution>> updateSolution(
+            @PathVariable String id,
+            @Valid @RequestBody AdminExpectedSolutionRequestDTO req) {
+        return adminContentService.updateSolution(id, req);
+    }
+
+    @DeleteMapping("/content/solution/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteSolution(@PathVariable String id) {
+        return adminContentService.deleteSolution(id);
     }
 }

@@ -121,4 +121,10 @@ public class AdminManagementQueries {
             FROM   admin_module_scope
             WHERE  admin_user_id = ?
             """;
+
+    /** Check if a user has a specific granted permission for a module+operation */
+    public final String HAS_PERMISSION = """
+            SELECT COUNT(*) FROM user_module_permissions
+            WHERE  user_id = ? AND module_key = ? AND operation = ? AND is_granted = true
+            """;
 }

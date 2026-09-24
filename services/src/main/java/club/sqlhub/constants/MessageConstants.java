@@ -52,4 +52,14 @@ public class MessageConstants {
     public static String CANNOT_ASSIGN_ROLE   = "CANNOT ASSIGN A ROLE EQUAL TO OR ABOVE YOUR OWN";
     public static String TARGET_NOT_ADMIN     = "TARGET USER IS NOT AN ADMIN";
     public static String OPERATION_OUT_OF_SCOPE = "OPERATION NOT IN YOUR ADMIN SCOPE";
+
+    // Admin content management
+    public static String QUESTION_NOT_FOUND  = "QUESTION NOT FOUND";
+    public static String TESTCASE_NOT_FOUND  = "TESTCASE GROUP NOT FOUND";
+    public static String SOLUTION_NOT_FOUND  = "EXPECTED SOLUTION NOT FOUND";
+    public static String CONTENT_CREATED     = "CREATED SUCCESSFULLY";
+    public static String CONTENT_UPDATED     = "UPDATED SUCCESSFULLY";
+    public static String CONTENT_DELETED     = "DELETED SUCCESSFULLY";
+    public static String NO_WRITE_ACCESS     = "YOU DO NOT HAVE WRITE ACCESS FOR THIS MODULE";
+    public static String NO_DELETE_ACCESS    = "YOU DO NOT HAVE DELETE ACCESS FOR THIS MODULE";
 }

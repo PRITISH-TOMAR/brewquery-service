@@ -75,4 +75,10 @@ public class AdminManagementRepository {
     public void upsertAdminScope(Integer adminUserId, String moduleKey, String grantableOpsJson) {
         jdbc.update(queries.UPSERT_ADMIN_SCOPE, adminUserId, moduleKey, grantableOpsJson);
     }
+
+    public boolean hasPermission(Integer userId, String moduleKey, String operation) {
+        Integer count = jdbc.queryForObject(queries.HAS_PERMISSION, Integer.class,
+                userId, moduleKey, operation);
+        return count != null && count > 0;
+    }
 }
