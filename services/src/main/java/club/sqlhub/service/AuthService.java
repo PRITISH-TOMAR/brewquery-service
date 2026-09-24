@@ -47,6 +47,7 @@ public class AuthService {
     private final EmailService emailService;
     private final EmailVerificationTokenHandler emailVerificationTokenHandler;
     private final EmailVerifyLinkTemplate emailVerifyLinkTemplate;
+    private final PermissionSeedService permissionSeedService;
 
     @Transactional
     public ResponseEntity<ApiResponse<UserDetailsDTO>> registerUser(RegisterUserDTO user) {
@@ -77,6 +78,8 @@ public class AuthService {
             UserDetailsDTO createdUser = authRepository.addUser(
                     newUser,
                     queries.INSERT_USER_DETAILS);
+
+            permissionSeedService.seed(createdUser.getUserId(), createdUser.getRole());
 
             return ApiResponse.call(HttpStatus.CREATED,
                     MessageConstants.USER_CREATED_SUCCESSFULLY,
