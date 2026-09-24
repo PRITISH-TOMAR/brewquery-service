@@ -40,4 +40,16 @@ public class MessageConstants {
     public static String ASSET_UPLOADED       = "ASSET UPLOADED SUCCESSFULLY";
     public static String ASSET_TOO_LARGE      = "Image must be smaller than 5 MB";
     public static String ASSET_EMPTY          = "No file provided";
+
+    // Admin user management
+    public static String USERS_FETCHED        = "USERS FETCHED SUCCESSFULLY";
+    public static String USER_STATUS_UPDATED  = "USER STATUS UPDATED SUCCESSFULLY";
+    public static String USER_ROLE_UPDATED    = "USER ROLE UPDATED SUCCESSFULLY";
+    public static String PERMISSIONS_UPDATED  = "PERMISSIONS UPDATED SUCCESSFULLY";
+    public static String ADMIN_SCOPE_UPDATED  = "ADMIN SCOPE UPDATED SUCCESSFULLY";
+    public static String ACCESS_DENIED        = "ACCESS DENIED";
+    public static String INVALID_STATUS       = "INVALID STATUS. USE ACTIVE OR BLOCKED";
+    public static String CANNOT_ASSIGN_ROLE   = "CANNOT ASSIGN A ROLE EQUAL TO OR ABOVE YOUR OWN";
+    public static String TARGET_NOT_ADMIN     = "TARGET USER IS NOT AN ADMIN";
+    public static String OPERATION_OUT_OF_SCOPE = "OPERATION NOT IN YOUR ADMIN SCOPE";
 }
