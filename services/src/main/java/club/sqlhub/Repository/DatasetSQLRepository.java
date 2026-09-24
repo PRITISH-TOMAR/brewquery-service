@@ -47,6 +47,8 @@ public class DatasetSQLRepository {
         } catch (Exception e) {
             throw new RuntimeException("Failed to deserialize dataset JSONB fields", e);
         }
+        java.sql.Timestamp deletedAt = rs.getTimestamp("deletedAt");
+        d.setDeletedAt(deletedAt != null ? deletedAt.toLocalDateTime() : null);
         return d;
     }; }
 
@@ -129,5 +131,17 @@ public class DatasetSQLRepository {
 
     public void updateErImage(String datasetId, String url) {
         jdbc.update(queries.UPDATE_ER, url, datasetId);
+    }
+
+    public void softDeleteById(String id) {
+        jdbc.update(queries.SOFT_DELETE_BY_ID, id);
+    }
+
+    public void incrementQuestions(String datasetId) {
+        jdbc.update(queries.INCREMENT_QUESTIONS, datasetId);
+    }
+
+    public void decrementQuestions(String datasetId) {
+        jdbc.update(queries.DECREMENT_QUESTIONS, datasetId);
     }
 }

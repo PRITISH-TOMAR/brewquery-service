@@ -8,13 +8,14 @@ public class QuestionQueries {
     private static final String SELECT = """
             SELECT id::TEXT AS id, dataset_id::TEXT AS datasetId, title, question, difficulty,
                    tags::TEXT AS tags, type, table_names::TEXT AS tableNames,
-                   created_at AS createdAt
+                   created_at AS createdAt, deleted_at AS deletedAt
             FROM questions
             """;
 
     public final String FIND_BY_ID = SELECT + "WHERE id = CAST(? AS BIGINT)";
 
-    public final String FIND_BY_DATASET_ID = SELECT + "WHERE dataset_id = CAST(? AS BIGINT)";
+    public final String FIND_BY_DATASET_ID = SELECT +
+            "WHERE dataset_id = CAST(? AS BIGINT) AND deleted_at IS NULL";
 
     public final String FIND_ALL_BY_IDS = SELECT + "WHERE id = ANY(CAST(? AS BIGINT[]))";
 
@@ -38,4 +39,7 @@ public class QuestionQueries {
             """;
 
     public final String DELETE_BY_ID = "DELETE FROM questions WHERE id = CAST(? AS BIGINT)";
+
+    public final String SOFT_DELETE_BY_ID =
+            "UPDATE questions SET deleted_at = NOW() WHERE id = CAST(? AS BIGINT)";
 }

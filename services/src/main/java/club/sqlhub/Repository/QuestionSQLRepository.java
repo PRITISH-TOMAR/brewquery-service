@@ -39,6 +39,8 @@ public class QuestionSQLRepository {
         } catch (Exception e) {
             throw new RuntimeException("Failed to deserialize question JSONB fields", e);
         }
+        java.sql.Timestamp deletedAt = rs.getTimestamp("deletedAt");
+        q.setDeletedAt(deletedAt != null ? deletedAt.toLocalDateTime() : null);
         return q;
     }; }
 
@@ -93,5 +95,9 @@ public class QuestionSQLRepository {
 
     public void deleteById(String id) {
         jdbc.update(queries.DELETE_BY_ID, id);
+    }
+
+    public void softDeleteById(String id) {
+        jdbc.update(queries.SOFT_DELETE_BY_ID, id);
     }
 }

@@ -19,5 +19,6 @@ public class Question {
     private String type;
     @JsonIgnore
     private List<String> tableNames;
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt  = LocalDateTime.now();
+    private LocalDateTime deletedAt;
 }

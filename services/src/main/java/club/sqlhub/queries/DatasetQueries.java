@@ -12,18 +12,21 @@ public class DatasetQueries {
                    skills::TEXT AS skills, difficulty,
                    sql_modes_available::TEXT AS sqlModesAvailable,
                    questions, table_count AS tableCount, data_type AS dataType,
-                   estimated_time AS estimatedTime, created_at AS createdAt
+                   estimated_time AS estimatedTime, created_at AS createdAt,
+                   deleted_at AS deletedAt
             FROM datasets
             """;
 
-    public final String FIND_ALL_PAGED = SELECT + "ORDER BY created_at DESC LIMIT ? OFFSET ?";
+    public final String FIND_ALL_PAGED = SELECT +
+            "WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT ? OFFSET ?";
 
-    public final String COUNT_ALL = "SELECT COUNT(*) FROM datasets";
+    public final String COUNT_ALL = "SELECT COUNT(*) FROM datasets WHERE deleted_at IS NULL";
 
     public final String FIND_ALL_BY_TITLE_PAGED = SELECT +
-            "WHERE LOWER(title) LIKE LOWER(?) ORDER BY created_at DESC LIMIT ? OFFSET ?";
+            "WHERE deleted_at IS NULL AND LOWER(title) LIKE LOWER(?) ORDER BY created_at DESC LIMIT ? OFFSET ?";
 
-    public final String COUNT_BY_TITLE = "SELECT COUNT(*) FROM datasets WHERE LOWER(title) LIKE LOWER(?)";
+    public final String COUNT_BY_TITLE =
+            "SELECT COUNT(*) FROM datasets WHERE deleted_at IS NULL AND LOWER(title) LIKE LOWER(?)";
 
     public final String FIND_BY_ID = SELECT + "WHERE id = CAST(? AS BIGINT)";
 
@@ -63,4 +66,13 @@ public class DatasetQueries {
     public final String UPDATE_COVER = "UPDATE datasets SET cover_image = ? WHERE id = CAST(? AS BIGINT)";
 
     public final String UPDATE_ER = "UPDATE datasets SET er_image = ? WHERE id = CAST(? AS BIGINT)";
+
+    public final String SOFT_DELETE_BY_ID =
+            "UPDATE datasets SET deleted_at = NOW() WHERE id = CAST(? AS BIGINT)";
+
+    public final String INCREMENT_QUESTIONS =
+            "UPDATE datasets SET questions = questions + 1 WHERE id = CAST(? AS BIGINT)";
+
+    public final String DECREMENT_QUESTIONS =
+            "UPDATE datasets SET questions = GREATEST(questions - 1, 0) WHERE id = CAST(? AS BIGINT)";
 }

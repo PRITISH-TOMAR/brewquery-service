@@ -26,5 +26,6 @@ public class Dataset {
     private String estimatedTime;
     private String erImage;
 
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt  = LocalDateTime.now();
+    private LocalDateTime deletedAt;
 }
