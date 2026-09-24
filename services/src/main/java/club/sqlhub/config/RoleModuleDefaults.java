@@ -35,22 +35,27 @@ public final class RoleModuleDefaults {
         map.put("USER", Collections.unmodifiableMap(userDefaults));
 
         // ── ADMIN ─────────────────────────────────────────────────────────────
-        // Full access to all modules by default.
-        // Admin scope (which users they can manage) is controlled separately via admin_module_scope.
-        Map<ModuleEnum, Set<ModuleOperationEnum>> adminDefaults = new EnumMap<>(ModuleEnum.class);
+        // Starts from USER defaults, then adds remaining operations on every module.
+        // This guarantees ADMIN always has everything a USER has, plus more.
         Set<ModuleOperationEnum> allOps = EnumSet.allOf(ModuleOperationEnum.class);
-        adminDefaults.put(ModuleEnum.SQL,      EnumSet.copyOf(allOps));
-        adminDefaults.put(ModuleEnum.NOSQL,    EnumSet.copyOf(allOps));
-        adminDefaults.put(ModuleEnum.VECTORDB, EnumSet.copyOf(allOps));
+        Map<ModuleEnum, Set<ModuleOperationEnum>> adminDefaults = new EnumMap<>(ModuleEnum.class);
+        for (ModuleEnum module : ModuleEnum.values()) {
+            Set<ModuleOperationEnum> ops = EnumSet.copyOf(
+                userDefaults.getOrDefault(module, EnumSet.noneOf(ModuleOperationEnum.class))
+            );
+            ops.addAll(allOps);
+            adminDefaults.put(module, ops);
+        }
         map.put("ADMIN", Collections.unmodifiableMap(adminDefaults));
 
         // ── SUPERADMIN ────────────────────────────────────────────────────────
-        // Same as admin — full access. Superadmin privilege is enforced at the
-        // service layer, not through extra operations.
+        // Starts from ADMIN defaults — inherits USER + ADMIN privileges.
         Map<ModuleEnum, Set<ModuleOperationEnum>> superAdminDefaults = new EnumMap<>(ModuleEnum.class);
-        superAdminDefaults.put(ModuleEnum.SQL,      EnumSet.copyOf(allOps));
-        superAdminDefaults.put(ModuleEnum.NOSQL,    EnumSet.copyOf(allOps));
-        superAdminDefaults.put(ModuleEnum.VECTORDB, EnumSet.copyOf(allOps));
+        for (ModuleEnum module : ModuleEnum.values()) {
+            Set<ModuleOperationEnum> ops = EnumSet.copyOf(adminDefaults.get(module));
+            ops.addAll(allOps);
+            superAdminDefaults.put(module, ops);
+        }
         map.put("SUPERADMIN", Collections.unmodifiableMap(superAdminDefaults));
 
         DEFAULTS = Collections.unmodifiableMap(map);
