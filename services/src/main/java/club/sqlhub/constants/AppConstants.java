@@ -11,10 +11,10 @@ public class AppConstants {
     public static final Integer OTP_REQUEST_LIMIT = 5;
     public static final Integer OTP_WINDOW_MINUTES = 10;
     public static final Integer OTP_TTL_MINUTES = 5;
-    public static String REDIS_OTP_KEY = "OTP:";
+    public static final Integer VERIFY_LINK_TTL_MINUTES = 15;
+    public static final Integer EMAIL_KEY_TTL_MINUTES = 10;
     public static String REDIS_OTP_RATE_LIMIT__KEY = "OTP_REQ:";
     public static String PASSWORD_ALGO_KEY = "PBKDF2WithHmacSHA256";
-    public static String REDIS_EMAIL_VERIFICATION_KEY = "EMAIL_VERIFY:";
     public static String PASSWORD_RESET_KEY = "RESET:";
     public static String PASSWORD_RESET_LIMIT_KEY = "RESET_REQ:";
     public static final Integer PASSWORD_RESET_WINDOW_MINUTES = 10;
@@ -29,8 +29,8 @@ public class AppConstants {
     public static final long REFRESH_TOKEN_TTL_MS = 15 * 60 * 60 * 24 * 1000L; // 15 days
 
     // EMAIL TEMPLATES SUBJECT
-    public static  String EMAIL_SUBJECT_OTP = "OTP for Email Verification";
-    public static  String EMAIL_SUBJECT_PASSWORD_RESET = "Password Reset Link";
+    public static String EMAIL_SUBJECT_VERIFY = "Verify your email";
+    public static String EMAIL_SUBJECT_PASSWORD_RESET = "Password Reset Link";
 
     // Token blacklist (logout)
     public static String REDIS_TOKEN_BLACKLIST_KEY = "BL_TOKEN:";

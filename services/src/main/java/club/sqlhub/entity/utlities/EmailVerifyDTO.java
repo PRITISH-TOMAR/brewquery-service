@@ -7,4 +7,5 @@ import lombok.Setter;
 @Setter
 public class EmailVerifyDTO {
     private String key;
+    private String email;
 }

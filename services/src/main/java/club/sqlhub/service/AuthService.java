@@ -20,16 +20,16 @@ import club.sqlhub.entity.user.DTO.ResetPasswordDTO;
 import club.sqlhub.entity.user.DTO.UserDetailsDTO;
 import club.sqlhub.entity.user.DTO.UserLoginDTO;
 import club.sqlhub.entity.utlities.EmailVerifyDTO;
-import club.sqlhub.entity.utlities.OTPDBO;
 import club.sqlhub.entity.utlities.TokenDBO;
 import club.sqlhub.entity.utlities.UserJWTDetailsDBO;
 import club.sqlhub.entity.utlities.enums.AuthEnum.TokenValidationResult;
 import club.sqlhub.queries.AuthQueries;
 import club.sqlhub.utils.APiResponse.ApiResponse;
+import club.sqlhub.utils.Auth.EmailVerificationTokenHandler;
 import club.sqlhub.utils.Auth.JWTHandler;
-import club.sqlhub.utils.Auth.OtpHandler;
+import club.sqlhub.utils.Auth.RateLimitHandler;
 import club.sqlhub.utils.User.UserHandler;
-import club.sqlhub.utils.emailTemplates.OTPTemplate;
+import club.sqlhub.utils.emailTemplates.EmailVerifyLinkTemplate;
 import club.sqlhub.utils.emailTemplates.PasswordResetTemplate;
 import lombok.AllArgsConstructor;
 
@@ -43,17 +43,26 @@ public class AuthService {
     private final JWTHandler jwtHandler;
     private final RedisTemplate<String, Object> redisTemplate;
     private final PasswordResetTemplate passwordResetTemplate;
-    private final OtpHandler otpHandler;
+    private final RateLimitHandler otpHandler;
     private final EmailService emailService;
+    private final EmailVerificationTokenHandler emailVerificationTokenHandler;
+    private final EmailVerifyLinkTemplate emailVerifyLinkTemplate;
 
     @Transactional
     public ResponseEntity<ApiResponse<UserDetailsDTO>> registerUser(RegisterUserDTO user) {
         try {
             String emailKey = user.getEmailKey().getKey();
-            String storedValue = (String) redisTemplate.opsForValue().get(emailKey);
+            String[] parts = emailVerificationTokenHandler.decrypt(emailKey);
+            String tokenEmail = parts[0];
+            long expiresAt = Long.parseLong(parts[1]);
 
-            if (storedValue == null || !storedValue.equals(user.getEmail())) {
-                return ApiResponse.call(HttpStatus.INTERNAL_SERVER_ERROR,
+            if (System.currentTimeMillis() > expiresAt) {
+                return ApiResponse.call(HttpStatus.BAD_REQUEST,
+                        MessageConstants.EMAIL_VERFICATION_KEY_EXPIRED);
+            }
+
+            if (!tokenEmail.equals(user.getEmail())) {
+                return ApiResponse.call(HttpStatus.BAD_REQUEST,
                         MessageConstants.EMAIL_VERFICATION_KEY_EXPIRED);
             }
 
@@ -126,7 +135,7 @@ public class AuthService {
         return true;
     }
 
-    public ResponseEntity<ApiResponse<OTPDBO>> sendOTP(String email) {
+    public ResponseEntity<ApiResponse<Void>> sendVerificationLink(String email) {
         try {
             List<UserDetailsDBO> existUser = authRepository.userExists(email, queries.IF_USER_EXISTS);
 
@@ -138,18 +147,17 @@ public class AuthService {
                 return ApiResponse.call(HttpStatus.FORBIDDEN, MessageConstants.TOO_MANY_REQUESTS);
             }
 
-            String otp = otpHandler.generateOTP();
-            String otpKey = otpHandler.otpKey(email);
+            long expiresAt = System.currentTimeMillis() +
+                    Duration.ofMinutes(AppConstants.VERIFY_LINK_TTL_MINUTES).toMillis();
 
-            redisTemplate.opsForValue().set(otpKey, otp,
-                    Duration.ofMinutes(AppConstants.OTP_TTL_MINUTES));
+            String token = emailVerificationTokenHandler.encrypt(email, expiresAt);
 
             emailService.sendEmail(
                     email,
-                    AppConstants.EMAIL_SUBJECT_OTP,
-                    OTPTemplate.getOtpHtmlTemplate(otp));
+                    AppConstants.EMAIL_SUBJECT_VERIFY,
+                    emailVerifyLinkTemplate.getVerifyLinkTemplate(token));
 
-            return ApiResponse.call(HttpStatus.OK, MessageConstants.OTP_SENT_SUCCESSFULLY);
+            return ApiResponse.call(HttpStatus.OK, MessageConstants.VERIFICATION_LINK_SENT);
 
         } catch (Exception ex) {
             return ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR,
@@ -157,33 +165,27 @@ public class AuthService {
         }
     }
 
-    public ResponseEntity<ApiResponse<EmailVerifyDTO>> verifyOTP(OTPDBO otpdbo) {
+    public ResponseEntity<ApiResponse<EmailVerifyDTO>> verifyEmailLink(String token) {
         try {
-            String otpKey = otpHandler.otpKey(otpdbo.getEmail());
-            String storedOtp = (String) redisTemplate.opsForValue().get(otpKey);
+            String[] parts = emailVerificationTokenHandler.decrypt(token);
+            String email = parts[0];
+            long expiresAt = Long.parseLong(parts[1]);
 
-            if (storedOtp == null) {
-                return ApiResponse.call(HttpStatus.BAD_REQUEST, MessageConstants.OTP_EXPIRED);
-            }
-            if (!storedOtp.equals(otpdbo.getOtp())) {
-                return ApiResponse.call(HttpStatus.BAD_REQUEST, MessageConstants.INVALID_OTP);
+            if (System.currentTimeMillis() > expiresAt) {
+                return ApiResponse.call(HttpStatus.BAD_REQUEST, MessageConstants.VERIFICATION_LINK_EXPIRED);
             }
 
-            redisTemplate.delete(otpKey);
+            long emailKeyExpiresAt = System.currentTimeMillis() +
+                    Duration.ofMinutes(AppConstants.EMAIL_KEY_TTL_MINUTES).toMillis();
 
-            String emailVerificationKey = otpHandler.emailVerificationKey(
-                    otpHandler.generateUuidForEmailVerification(otpdbo.getEmail()));
-
-            redisTemplate.opsForValue().set(
-                    emailVerificationKey,
-                    otpdbo.getEmail(),
-                    Duration.ofMinutes(AppConstants.OTP_TTL_MINUTES));
+            String emailKey = emailVerificationTokenHandler.encrypt(email, emailKeyExpiresAt);
 
             EmailVerifyDTO response = new EmailVerifyDTO();
-            response.setKey(emailVerificationKey);
+            response.setKey(emailKey);
+            response.setEmail(email);
 
             return ApiResponse.call(HttpStatus.OK,
-                    MessageConstants.OTP_VERIFIED_SUCCESSFULLY,
+                    MessageConstants.EMAIL_VERIFIED_SUCCESSFULLY,
                     response);
 
         } catch (Exception e) {

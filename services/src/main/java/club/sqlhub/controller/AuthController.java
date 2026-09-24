@@ -11,7 +11,6 @@ import club.sqlhub.entity.user.DTO.UserDetailsDTO;
 import club.sqlhub.entity.user.DTO.UserLoginDTO;
 import club.sqlhub.entity.user.DTO.ResetPasswordDTO.ForgotPasswordDTO;
 import club.sqlhub.entity.utlities.EmailVerifyDTO;
-import club.sqlhub.entity.utlities.OTPDBO;
 import club.sqlhub.entity.utlities.TokenDBO;
 import club.sqlhub.entity.utlities.UserJWTDetailsDBO;
 import club.sqlhub.service.AuthService;
@@ -25,7 +24,8 @@ import lombok.AllArgsConstructor;
 public class AuthController {
 
     private final AuthService authService;
-     @PostMapping("/register")
+
+    @PostMapping("/register")
     public ResponseEntity<ApiResponse<UserDetailsDTO>> RegisterUser(@Valid @RequestBody RegisterUserDTO req) {
         return authService.registerUser(req);
     }
@@ -36,13 +36,13 @@ public class AuthController {
     }
 
     @GetMapping("/send")
-    public ResponseEntity<ApiResponse<OTPDBO>> sendOTP(@Valid @RequestParam String email) {
-        return authService.sendOTP(email);
+    public ResponseEntity<ApiResponse<Void>> sendVerificationLink(@Valid @RequestParam String email) {
+        return authService.sendVerificationLink(email);
     }
 
-    @PostMapping("/verify")
-    public ResponseEntity<ApiResponse<EmailVerifyDTO>> verifyOTP(@Valid @RequestBody OTPDBO otpDbo) {
-        return authService.verifyOTP(otpDbo);
+    @GetMapping("/verify")
+    public ResponseEntity<ApiResponse<EmailVerifyDTO>> verifyEmailLink(@Valid @RequestParam String token) {
+        return authService.verifyEmailLink(token);
     }
 
     @GetMapping("/refresh/{refreshAccessToken}")
@@ -51,7 +51,7 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<ApiResponse<String>> forgotPassword(@Valid @RequestBody ForgotPasswordDTO dto ) {
+    public ResponseEntity<ApiResponse<String>> forgotPassword(@Valid @RequestBody ForgotPasswordDTO dto) {
         return authService.forgotPassword(dto.getEmail());
     }
 
