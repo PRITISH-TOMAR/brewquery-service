@@ -61,7 +61,7 @@ public class AuthService {
                         MessageConstants.EMAIL_VERFICATION_KEY_EXPIRED);
             }
 
-            if (!tokenEmail.equals(user.getEmail())) {
+            if (!tokenEmail.equalsIgnoreCase(user.getEmail())) {
                 return ApiResponse.call(HttpStatus.BAD_REQUEST,
                         MessageConstants.EMAIL_VERFICATION_KEY_EXPIRED);
             }
