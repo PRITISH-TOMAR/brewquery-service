@@ -2,6 +2,8 @@ package club.sqlhub.mongo.models;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import club.sqlhub.entity.Enums.TestCaseType;
@@ -14,7 +16,9 @@ public class TestCaseSQL {
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class TestCase {
+        @JsonAlias("_id")
         private String id;
         private Double numericTolerance;
         private String type;

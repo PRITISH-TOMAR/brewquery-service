@@ -1,6 +1,5 @@
 package club.sqlhub.Repository;
 
-import java.sql.Array;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -60,10 +59,16 @@ public class TestCaseSQLRepository {
 
     public List<TestCases> findByQuestionIds(List<String> questionIds) {
         if (questionIds == null || questionIds.isEmpty()) return Collections.emptyList();
+        String[] idArray = questionIds.toArray(new String[0]);
         try {
-            Array arr = jdbc.getDataSource().getConnection()
-                    .createArrayOf("VARCHAR", questionIds.toArray(new String[0]));
-            return jdbc.query(queries.FIND_BY_QUESTION_IDS, rowMapper(), arr);
+            return jdbc.query(
+                conn -> {
+                    java.sql.PreparedStatement ps = conn.prepareStatement(queries.FIND_BY_QUESTION_IDS);
+                    ps.setArray(1, conn.createArrayOf("VARCHAR", idArray));
+                    return ps;
+                },
+                rowMapper()
+            );
         } catch (Exception e) {
             throw new RuntimeException("Failed to query test cases by question ids", e);
         }
