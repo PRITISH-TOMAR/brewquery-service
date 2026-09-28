@@ -8,7 +8,7 @@ import java.util.List;
 
 @Getter
 @Setter
-public class AdminQuestionRequestDTO {
+public class AdminProblemRequestDTO {
 
     @NotBlank(message = "datasetId is required")
     private String datasetId;

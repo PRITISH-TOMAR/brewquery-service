@@ -3,7 +3,7 @@ package club.sqlhub.queries;
 import org.springframework.stereotype.Component;
 
 @Component
-public class QuestionQueries {
+public class ProblemQueries {
 
     private static final String SELECT = """
             SELECT id::TEXT AS id, dataset_id::TEXT AS datasetId, title, question, difficulty,
