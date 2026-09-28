@@ -19,7 +19,7 @@ public class Dataset {
     private List<String> categories;
     private List<String> skills;
     private String difficulty;
-    private List<String> sqlModesAvailable;
+    private List<String> modesAvailable;
     private int questions;
     private int tableCount;
     private String dataType;

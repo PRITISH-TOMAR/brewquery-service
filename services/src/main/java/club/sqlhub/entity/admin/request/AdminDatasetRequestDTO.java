@@ -28,6 +28,6 @@ public class AdminDatasetRequestDTO {
     private List<String> tags;
     private List<String> categories;
     private List<String> skills;
-    private List<String> sqlModesAvailable;
+    private List<String> modesAvailable;
     private int tableCount;
 }

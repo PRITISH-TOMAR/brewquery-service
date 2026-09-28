@@ -1,6 +1,5 @@
 package club.sqlhub.Repository;
 
-import java.sql.Array;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -43,7 +42,8 @@ public class DatasetSQLRepository {
             d.setTags(mapper.readValue(rs.getString("tags"), new TypeReference<>() {}));
             d.setCategories(mapper.readValue(rs.getString("categories"), new TypeReference<>() {}));
             d.setSkills(mapper.readValue(rs.getString("skills"), new TypeReference<>() {}));
-            d.setSqlModesAvailable(mapper.readValue(rs.getString("sqlModesAvailable"), new TypeReference<>() {}));
+            String modesJson = rs.getString("modesAvailable");
+            d.setModesAvailable(modesJson != null ? mapper.readValue(modesJson, new TypeReference<>() {}) : null);
         } catch (Exception e) {
             throw new RuntimeException("Failed to deserialize dataset JSONB fields", e);
         }
@@ -88,7 +88,7 @@ public class DatasetSQLRepository {
                         mapper.writeValueAsString(d.getCategories()),
                         mapper.writeValueAsString(d.getSkills()),
                         d.getDifficulty(),
-                        mapper.writeValueAsString(d.getSqlModesAvailable()),
+                        d.getModesAvailable() != null ? mapper.writeValueAsString(d.getModesAvailable()) : null,
                         d.getQuestions(), d.getTableCount(), d.getDataType(),
                         d.getEstimatedTime(), d.getCreatedAt());
                 d.setId(id);
@@ -100,7 +100,7 @@ public class DatasetSQLRepository {
                         mapper.writeValueAsString(d.getCategories()),
                         mapper.writeValueAsString(d.getSkills()),
                         d.getDifficulty(),
-                        mapper.writeValueAsString(d.getSqlModesAvailable()),
+                        d.getModesAvailable() != null ? mapper.writeValueAsString(d.getModesAvailable()) : null,
                         d.getQuestions(), d.getTableCount(), d.getDataType(),
                         d.getEstimatedTime(), d.getId());
             }
@@ -116,10 +116,16 @@ public class DatasetSQLRepository {
 
     public List<Dataset> findAllById(Collection<String> ids) {
         if (ids == null || ids.isEmpty()) return Collections.emptyList();
+        String[] idArray = ids.toArray(new String[0]);
         try {
-            Array arr = jdbc.getDataSource().getConnection()
-                    .createArrayOf("VARCHAR", ids.toArray(new String[0]));
-            return jdbc.query(queries.FIND_ALL_BY_IDS, rowMapper(), arr);
+            return jdbc.query(
+                conn -> {
+                    java.sql.PreparedStatement ps = conn.prepareStatement(queries.FIND_ALL_BY_IDS);
+                    ps.setArray(1, conn.createArrayOf("VARCHAR", idArray));
+                    return ps;
+                },
+                rowMapper()
+            );
         } catch (Exception e) {
             throw new RuntimeException("Failed to query datasets by ids", e);
         }
@@ -135,6 +141,24 @@ public class DatasetSQLRepository {
 
     public void softDeleteById(String id) {
         jdbc.update(queries.SOFT_DELETE_BY_ID, id);
+    }
+
+    public List<Dataset> findByModulePaged(String module, int limit, int offset) {
+        return jdbc.query(queries.FIND_BY_MODULE_PAGED, rowMapper(), module, limit, offset);
+    }
+
+    public long countByModule(String module) {
+        Long count = jdbc.queryForObject(queries.COUNT_BY_MODULE, Long.class, module);
+        return count != null ? count : 0L;
+    }
+
+    public List<Dataset> findByModuleAndTitlePaged(String module, String search, int limit, int offset) {
+        return jdbc.query(queries.FIND_BY_MODULE_AND_TITLE_PAGED, rowMapper(), module, "%" + search + "%", limit, offset);
+    }
+
+    public long countByModuleAndTitle(String module, String search) {
+        Long count = jdbc.queryForObject(queries.COUNT_BY_MODULE_AND_TITLE, Long.class, module, "%" + search + "%");
+        return count != null ? count : 0L;
     }
 
     public void incrementQuestions(String datasetId) {
