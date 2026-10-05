@@ -1,5 +1,7 @@
 package club.sqlhub.service;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,6 +22,7 @@ import club.sqlhub.entity.admin.request.AdminDatasetRequestDTO;
 import club.sqlhub.entity.admin.request.AdminExpectedSolutionRequestDTO;
 import club.sqlhub.entity.admin.request.AdminProblemRequestDTO;
 import club.sqlhub.entity.admin.request.AdminSolutionGenerateRequestDTO;
+import club.sqlhub.entity.admin.request.AdminTestCaseGenerateRequestDTO;
 import club.sqlhub.entity.admin.request.AdminTestCaseGroupRequestDTO;
 import club.sqlhub.entity.Enums.TestCaseType;
 import club.sqlhub.entity.judge.JudgeServerJobDTO.JudgeJobPayload;
@@ -214,7 +217,9 @@ public class AdminContentService {
                         .collect(java.util.stream.Collectors.toList()));
             }
 
-            List<TestCase> testCases = testCaseService.findTestCasesByQuestionId(id);
+            List<TestCase> testCases = isAdminOrAbove()
+                    ? testCaseService.findTestCasesByQuestionId(id)
+                    : testCaseService.findTestCasesByTypeAndQuestionId(TestCaseType.PUBLIC, id);
             if (relevant != null) {
                 for (TestCase tc : testCases) {
                     if (tc.getSampleData() instanceof List) {
@@ -550,6 +555,111 @@ public class AdminContentService {
         } catch (Exception e) {
             return ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR,
                     MessageConstants.INTERNAL_SERVER_ERROR, e);
+        }
+    }
+
+    // ── Test case generate ────────────────────────────────────────────────────
+
+    public ResponseEntity<ApiResponse<TestCases>> generateTestCase(
+            String questionId, AdminTestCaseGenerateRequestDTO req) {
+        try {
+            Problem problem = problemRepo.findById(questionId);
+            if (problem == null)
+                return ApiResponse.call(HttpStatus.NOT_FOUND, MessageConstants.QUESTION_NOT_FOUND);
+
+            Dataset dataset = datasetRepo.findById(problem.getDatasetId());
+            if (dataset == null)
+                return ApiResponse.call(HttpStatus.NOT_FOUND, MessageConstants.DATASET_NOT_FOUND);
+
+            if (!canWrite(dataset.getDataType()))
+                return ApiResponse.call(HttpStatus.FORBIDDEN, MessageConstants.NO_WRITE_ACCESS);
+
+            if (req.getSampleData() == null || req.getSampleData().isEmpty())
+                return ApiResponse.call(HttpStatus.BAD_REQUEST, "sampleData is required");
+
+            // Validate that every table in sampleData belongs to this question
+            List<String> allowedTables = problem.getTableNames();
+            if (allowedTables != null && !allowedTables.isEmpty()) {
+                java.util.Set<String> allowedSet = new java.util.HashSet<>(allowedTables);
+                for (Map<String, Object> entry : req.getSampleData()) {
+                    String tbl = (String) entry.get("table");
+                    if (tbl != null && !allowedSet.contains(tbl)) {
+                        return ApiResponse.call(HttpStatus.BAD_REQUEST,
+                                "Table '" + tbl + "' is not in this question's allowed tables: " + allowedTables);
+                    }
+                }
+            }
+
+            // Get or create TC group
+            TestCases tcGroup = testCaseRepo.findByQuestionId(questionId).orElse(null);
+            if (tcGroup == null) {
+                if (req.getExpectedSql() == null || req.getExpectedSql().isBlank())
+                    return ApiResponse.call(HttpStatus.BAD_REQUEST,
+                            "expectedSql is required to create the test case group");
+                tcGroup = new TestCases();
+                tcGroup.setQuestionId(questionId);
+                tcGroup.setExpectedSql(req.getExpectedSql());
+                tcGroup.setType(req.getGroupType() != null ? req.getGroupType() : problem.getType());
+                tcGroup.setTestCases(new ArrayList<>());
+            }
+
+            // Build schema SQL (from dataset metadata) + seed SQL (from provided sampleData)
+            String sqlMode = (dataset.getModesAvailable() != null && !dataset.getModesAvailable().isEmpty())
+                    ? dataset.getModesAvailable().get(0) : "MySQL";
+            Metadata metadata = metadataRepo.findByDatasetId(problem.getDatasetId());
+            String schemaSql = SchemaGenerator.generate(metadata, sqlMode);
+            String seedSql   = SeedGenerator.generate(req.getSampleData());
+
+            // Send expectedSql as both sql and expectedSql — judge runs it, returns userOutput
+            String expectedSql = tcGroup.getExpectedSql();
+            TestCaseEnginePayload enginePayload = new TestCaseEnginePayload(
+                    UUID.randomUUID().toString(), schemaSql, seedSql,
+                    req.getNumericTolerance(),
+                    req.getType() != null ? req.getType() : "public");
+
+            SQLPayload sqlPayload = new SQLPayload(
+                    expectedSql, questionId, problem.getType(),
+                    expectedSql, List.of(enginePayload), sqlMode);
+
+            JudgeJobPayload jobPayload = new JudgeJobPayload();
+            jobPayload.setJobId(UUID.randomUUID().toString());
+            jobPayload.setType("SQL");
+            jobPayload.setUserId("admin");
+            jobPayload.setPayload(objectMapper.writeValueAsString(sqlPayload));
+
+            RunTestcaseResponseDTO engineResult = sqlRemoteRepository.runPublicTestCases(jobPayload);
+
+            if (engineResult.getTestDetails() == null || engineResult.getTestDetails().isEmpty())
+                return ApiResponse.call(HttpStatus.BAD_GATEWAY,
+                        "Engine returned no output — check the expected SQL and seed data");
+
+            Map<String, Object> detail = objectMapper.convertValue(
+                    engineResult.getTestDetails().get(0),
+                    new TypeReference<Map<String, Object>>() {});
+
+            Object rawOutput = detail.get("userOutput");
+            if (rawOutput == null)
+                return ApiResponse.call(HttpStatus.BAD_GATEWAY,
+                        "Engine did not return output for expectedSql");
+
+            // Build TC — sampleData from request, expectedOutput from judge
+            TestCase newTc = new TestCase();
+            newTc.setId(UUID.randomUUID().toString());
+            newTc.setType(req.getType() != null ? req.getType() : "public");
+            newTc.setNumericTolerance(req.getNumericTolerance());
+            newTc.setSampleData(req.getSampleData());
+            newTc.setExpectedOutput(rawOutput);
+
+            List<TestCase> tcs = tcGroup.getTestCases() != null
+                    ? new ArrayList<>(tcGroup.getTestCases()) : new ArrayList<>();
+            tcs.add(newTc);
+            tcGroup.setTestCases(tcs);
+
+            return ApiResponse.call(HttpStatus.CREATED, MessageConstants.CONTENT_CREATED,
+                    testCaseRepo.save(tcGroup));
+
+        } catch (Exception e) {
+            return ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, MessageConstants.INTERNAL_SERVER_ERROR, e);
         }
     }
 

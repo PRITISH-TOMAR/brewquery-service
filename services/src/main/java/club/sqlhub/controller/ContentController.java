@@ -174,6 +174,14 @@ public class ContentController {
     }
 
     @RequiresAccess(roles = {"ADMIN", "SUPERADMIN"})
+    @PostMapping("/problems/{questionId}/testcases/generate")
+    public ResponseEntity<ApiResponse<TestCases>> generateTestCase(
+            @PathVariable String questionId,
+            @RequestBody AdminTestCaseGenerateRequestDTO req) {
+        return adminContentService.generateTestCase(questionId, req);
+    }
+
+    @RequiresAccess(roles = {"ADMIN", "SUPERADMIN"})
     @PostMapping("/problems/{questionId}/solution/generate")
     public ResponseEntity<ApiResponse<ExpectedSolution>> generateSolution(
             @PathVariable String questionId,
