@@ -62,4 +62,12 @@ public class MetadataSQLRepository {
     public void deleteByDatasetId(String datasetId) {
         jdbc.update(queries.DELETE_BY_DATASET_ID, datasetId);
     }
+
+    public void upsertByDatasetId(String datasetId, List<Metadata.TableSchema> tables) {
+        try {
+            jdbc.update(queries.UPSERT_BY_DATASET_ID, datasetId, mapper.writeValueAsString(tables));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to upsert metadata", e);
+        }
+    }
 }

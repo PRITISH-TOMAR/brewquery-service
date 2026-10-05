@@ -24,4 +24,10 @@ public class MetadataQueries {
             """;
 
     public final String DELETE_BY_DATASET_ID = "DELETE FROM metadata WHERE dataset_id = CAST(? AS BIGINT)";
+
+    public final String UPSERT_BY_DATASET_ID = """
+            INSERT INTO metadata (dataset_id, tables)
+            VALUES (CAST(? AS BIGINT), ?::JSONB)
+            ON CONFLICT (dataset_id) DO UPDATE SET tables = EXCLUDED.tables
+            """;
 }
