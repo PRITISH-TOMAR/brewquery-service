@@ -285,6 +285,8 @@ public class AdminContentService {
 
             Problem p = toProblem(req);
             p.setId(id);
+            p.setDatasetId(existing.getDatasetId());
+            p.setSlug(existing.getSlug());
             p.setCreatedAt(existing.getCreatedAt());
             return ApiResponse.call(HttpStatus.OK, MessageConstants.CONTENT_UPDATED, problemRepo.save(p));
         } catch (Exception e) {
@@ -614,6 +616,7 @@ public class AdminContentService {
     private Problem toProblem(AdminProblemRequestDTO req) {
         Problem p = new Problem();
         p.setDatasetId(req.getDatasetId());
+        p.setSlug(generateSlug(req.getTitle()));
         p.setTitle(req.getTitle());
         p.setQuestion(req.getQuestion());
         p.setDifficulty(req.getDifficulty());

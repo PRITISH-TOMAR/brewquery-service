@@ -28,6 +28,7 @@ public class ProblemSQLRepository {
         Problem p = new Problem();
         p.setId(rs.getString("id"));
         p.setDatasetId(rs.getString("datasetId"));
+        p.setSlug(rs.getString("slug"));
         p.setTitle(rs.getString("title"));
         p.setQuestion(rs.getString("question"));
         p.setDifficulty(rs.getString("difficulty"));
@@ -59,7 +60,7 @@ public class ProblemSQLRepository {
         try {
             if (p.getId() == null) {
                 String id = jdbc.queryForObject(queries.INSERT, String.class,
-                        p.getDatasetId(), p.getTitle(), p.getQuestion(),
+                        p.getDatasetId(), p.getSlug(), p.getTitle(), p.getQuestion(),
                         p.getDifficulty(),
                         mapper.writeValueAsString(p.getTags()),
                         p.getType(),
@@ -68,7 +69,7 @@ public class ProblemSQLRepository {
                 p.setId(id);
             } else {
                 jdbc.update(queries.UPDATE,
-                        p.getDatasetId(), p.getTitle(), p.getQuestion(),
+                        p.getDatasetId(), p.getSlug(), p.getTitle(), p.getQuestion(),
                         p.getDifficulty(),
                         mapper.writeValueAsString(p.getTags()),
                         p.getType(),

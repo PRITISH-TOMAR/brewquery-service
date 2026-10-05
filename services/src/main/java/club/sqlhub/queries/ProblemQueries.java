@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 public class ProblemQueries {
 
     private static final String SELECT = """
-            SELECT id::TEXT AS id, dataset_id::TEXT AS datasetId, title, question, difficulty,
+            SELECT id::TEXT AS id, dataset_id::TEXT AS datasetId, slug, title, question, difficulty,
                    tags::TEXT AS tags, type, table_names::TEXT AS tableNames,
                    created_at AS createdAt, deleted_at AS deletedAt
             FROM questions
@@ -21,14 +21,15 @@ public class ProblemQueries {
 
     public final String INSERT = """
             INSERT INTO questions
-                (dataset_id, title, question, difficulty, tags, type, table_names, created_at)
-            VALUES (CAST(? AS BIGINT), ?, ?, ?, ?::JSONB, ?, ?::JSONB, ?)
+                (dataset_id, slug, title, question, difficulty, tags, type, table_names, created_at)
+            VALUES (CAST(? AS BIGINT), ?, ?, ?, ?, ?::JSONB, ?, ?::JSONB, ?)
             RETURNING id::TEXT AS id
             """;
 
     public final String UPDATE = """
             UPDATE questions SET
                 dataset_id  = CAST(? AS BIGINT),
+                slug        = ?,
                 title       = ?,
                 question    = ?,
                 difficulty  = ?,
