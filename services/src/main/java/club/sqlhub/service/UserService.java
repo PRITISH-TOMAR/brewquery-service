@@ -199,40 +199,15 @@ public class UserService {
             });
             if (results.size() > limit) results = results.subList(0, limit);
 
-            Set<String> qIds = extractQuestionIds(results);
-            Map<String, Question> questionMap = new HashMap<>();
-            Set<String> dsIds = new HashSet<>();
-
-            if (!qIds.isEmpty()) {
-                questionRepository.findAllById(qIds).forEach(q -> {
-                    questionMap.put(q.getId(), q);
-                    if (q.getDatasetId() != null) dsIds.add(q.getDatasetId());
-                });
-            }
-
-            Map<String, String> datasetNameMap = new HashMap<>();
-            if (!dsIds.isEmpty()) {
-                datasetRepository.findAllById(dsIds)
-                        .forEach(d -> datasetNameMap.put(d.getId(), d.getTitle()));
-            }
-
             List<UserSubmissionDTO> submissions = results.stream().map(r -> {
                 String qId           = r.getQuestionId();
-                Question q           = questionMap.get(qId);
                 String overallStatus = overallStatus(r);
-
-                String datasetName = null;
-                String diff        = null;
-                if (q != null) {
-                    diff       = q.getDifficulty();
-                    datasetName = datasetNameMap.get(q.getDatasetId());
-                }
 
                 UserSubmissionDTO sub = new UserSubmissionDTO();
                 sub.setId(r.getJobId());
-                sub.setQuestionTitle(q != null ? q.getTitle() : (qId != null ? qId : "—"));
-                sub.setDataset(datasetName != null ? datasetName : "Unknown");
-                sub.setLevel(diff != null ? capitalize(diff) : "—");
+                sub.setQuestionTitle(r.getQuestionTitle() != null ? r.getQuestionTitle() : (qId != null ? qId : "—"));
+                sub.setDataset(r.getDataset() != null ? r.getDataset() : "Unknown");
+                sub.setLevel(r.getLevel() != null ? capitalize(r.getLevel()) : "—");
                 sub.setLanguage("SQL");
                 sub.setTimeTaken(formatTimeTaken(execMs(r)));
                 sub.setSubmittedAt(timestamp(r) != null ? formatSubmittedAt(timestamp(r)) : "—");
@@ -382,6 +357,7 @@ public class UserService {
     }
 
     private static String formatTimeTaken(long ms) {
+        if (ms < 1000) return ms + "ms";
         long totalSecs = ms / 1000;
         long mins = totalSecs / 60;
         long secs = totalSecs % 60;
