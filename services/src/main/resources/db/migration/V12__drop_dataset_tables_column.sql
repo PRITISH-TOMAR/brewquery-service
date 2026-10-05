@@ -1,0 +1,1 @@
+ALTER TABLE datasets DROP COLUMN IF EXISTS tables;
