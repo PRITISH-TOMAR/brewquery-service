@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 import club.sqlhub.entity.Datasets.DatasetPageResponseDTO;
 import club.sqlhub.entity.Datasets.ProblemDescription;
 import club.sqlhub.entity.admin.request.*;
+import club.sqlhub.entity.admin.request.AdminSolutionGenerateRequestDTO;
 import club.sqlhub.mongo.models.Dataset;
 import club.sqlhub.mongo.models.ExpectedSolution;
 import club.sqlhub.mongo.models.Problem;
@@ -50,22 +51,28 @@ public class ContentController {
     }
 
     @RequiresAccess(roles = {"USER", "ADMIN", "SUPERADMIN"})
-    @GetMapping("/datasets/{id}")
-    public ResponseEntity<ApiResponse<Dataset>> getDatasetById(@PathVariable String id) {
+    @GetMapping("/module/{module}/datasets/{id}")
+    public ResponseEntity<ApiResponse<Dataset>> getDatasetById(
+            @PathVariable String module,
+            @PathVariable String id) {
         return adminContentService.getDatasetById(id);
     }
 
     @RequiresAccess(roles = {"ADMIN", "SUPERADMIN"})
-    @PutMapping("/datasets/{id}")
+    @PutMapping("/module/{module}/datasets/{id}")
     public ResponseEntity<ApiResponse<Dataset>> updateDataset(
+            @PathVariable String module,
             @PathVariable String id,
             @Valid @RequestBody AdminDatasetRequestDTO req) {
+        req.setDataType(module);
         return adminContentService.updateDataset(id, req);
     }
 
     @RequiresAccess(roles = {"ADMIN", "SUPERADMIN"})
-    @DeleteMapping("/datasets/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteDataset(@PathVariable String id) {
+    @DeleteMapping("/module/{module}/datasets/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteDataset(
+            @PathVariable String module,
+            @PathVariable String id) {
         return adminContentService.deleteDataset(id);
     }
 
@@ -164,6 +171,14 @@ public class ContentController {
     @DeleteMapping("/solutions/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteSolution(@PathVariable String id) {
         return adminContentService.deleteSolution(id);
+    }
+
+    @RequiresAccess(roles = {"ADMIN", "SUPERADMIN"})
+    @PostMapping("/problems/{questionId}/solution/generate")
+    public ResponseEntity<ApiResponse<ExpectedSolution>> generateSolution(
+            @PathVariable String questionId,
+            @Valid @RequestBody AdminSolutionGenerateRequestDTO req) {
+        return adminContentService.generateAndSaveSolution(questionId, req);
     }
 
     // ── Assets ────────────────────────────────────────────────────────────────

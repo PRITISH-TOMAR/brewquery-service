@@ -22,10 +22,12 @@ public class Dataset {
     private List<String> modesAvailable;
     private int questions;
     private int tableCount;
+    private List<String> tableNames;
     private String dataType;
     private String estimatedTime;
     private String erImage;
+    private int active;
 
-    private LocalDateTime createdAt  = LocalDateTime.now();
+    private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime deletedAt;
 }

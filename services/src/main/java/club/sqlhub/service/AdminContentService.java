@@ -1,20 +1,31 @@
 package club.sqlhub.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import club.sqlhub.Repository.DatasetSQLRepository;
 import club.sqlhub.Repository.ExpectedSolutionSQLRepository;
 import club.sqlhub.Repository.MetadataSQLRepository;
 import club.sqlhub.Repository.ProblemSQLRepository;
 import club.sqlhub.Repository.TestCaseSQLRepository;
+import club.sqlhub.Repository.remoteRepository.SQLRemoteRepository;
 import club.sqlhub.constants.MessageConstants;
 import club.sqlhub.entity.Datasets.DatasetPageResponseDTO;
 import club.sqlhub.entity.Datasets.ProblemDescription;
 import club.sqlhub.entity.admin.request.AdminDatasetRequestDTO;
 import club.sqlhub.entity.admin.request.AdminExpectedSolutionRequestDTO;
 import club.sqlhub.entity.admin.request.AdminProblemRequestDTO;
+import club.sqlhub.entity.admin.request.AdminSolutionGenerateRequestDTO;
 import club.sqlhub.entity.admin.request.AdminTestCaseGroupRequestDTO;
+import club.sqlhub.entity.Enums.TestCaseType;
+import club.sqlhub.entity.judge.JudgeServerJobDTO.JudgeJobPayload;
+import club.sqlhub.entity.judge.JudgeServerJobDTO.RunTestcaseResponseDTO;
+import club.sqlhub.entity.judge.SQLDTO.SQLPayload;
+import club.sqlhub.entity.judge.SQLDTO.TestCaseEnginePayload;
 import club.sqlhub.mongo.models.Dataset;
 import club.sqlhub.mongo.models.ExpectedSolution;
 import club.sqlhub.mongo.models.Metadata;
@@ -25,6 +36,8 @@ import club.sqlhub.mongo.service.TestCaseService;
 import club.sqlhub.mongo.models.TestCaseSQL.TestCases;
 import club.sqlhub.utils.APiResponse.ApiResponse;
 import club.sqlhub.utils.Auth.UserPrincipal;
+import club.sqlhub.utils.sql.SchemaGenerator;
+import club.sqlhub.utils.sql.SeedGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -41,6 +54,8 @@ public class AdminContentService {
     private final TestCaseSQLRepository         testCaseRepo;
     private final TestCaseService               testCaseService;
     private final ExpectedSolutionSQLRepository solutionRepo;
+    private final SQLRemoteRepository           sqlRemoteRepository;
+    private final ObjectMapper                  objectMapper;
 
     // ── Auth helpers ──────────────────────────────────────────────────────────
 
@@ -51,6 +66,12 @@ public class AdminContentService {
     private boolean isSuperAdmin() {
         return getPrincipal().getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERADMIN"));
+    }
+
+    private boolean isAdminOrAbove() {
+        return getPrincipal().getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")
+                            || a.getAuthority().equals("ROLE_SUPERADMIN"));
     }
 
     private boolean canWrite(String moduleKey) {
@@ -73,14 +94,25 @@ public class AdminContentService {
             String module, int page, int size, String search) {
         try {
             int offset = page * size;
+            boolean adminView = isAdminOrAbove();
             List<Dataset> items;
             long total;
             if (search != null && !search.isBlank()) {
-                items = datasetRepo.findByModuleAndTitlePaged(module, search, size, offset);
-                total = datasetRepo.countByModuleAndTitle(module, search);
+                if (adminView) {
+                    items = datasetRepo.findByModuleAndTitlePaged(module, search, size, offset);
+                    total = datasetRepo.countByModuleAndTitle(module, search);
+                } else {
+                    items = datasetRepo.findByModuleAndTitlePagedActive(module, search, size, offset);
+                    total = datasetRepo.countByModuleAndTitleActive(module, search);
+                }
             } else {
-                items = datasetRepo.findByModulePaged(module, size, offset);
-                total = datasetRepo.countByModule(module);
+                if (adminView) {
+                    items = datasetRepo.findByModulePaged(module, size, offset);
+                    total = datasetRepo.countByModule(module);
+                } else {
+                    items = datasetRepo.findByModulePagedActive(module, size, offset);
+                    total = datasetRepo.countByModuleActive(module);
+                }
             }
             int totalPages = (int) Math.ceil((double) total / size);
             return ApiResponse.call(HttpStatus.OK, MessageConstants.OK,
@@ -94,6 +126,8 @@ public class AdminContentService {
         try {
             Dataset d = datasetRepo.findById(id);
             if (d == null)
+                return ApiResponse.call(HttpStatus.NOT_FOUND, MessageConstants.DATASET_NOT_FOUND);
+            if (!isAdminOrAbove() && d.getActive() != 1)
                 return ApiResponse.call(HttpStatus.NOT_FOUND, MessageConstants.DATASET_NOT_FOUND);
             return ApiResponse.call(HttpStatus.OK, MessageConstants.OK, d);
         } catch (Exception e) {
@@ -109,6 +143,7 @@ public class AdminContentService {
                 return ApiResponse.call(HttpStatus.FORBIDDEN, MessageConstants.NO_WRITE_ACCESS);
 
             Dataset saved = datasetRepo.save(toDataset(req));
+            upsertMetadataNames(saved.getId(), req.getTableNames());
             return ApiResponse.call(HttpStatus.CREATED, MessageConstants.CONTENT_CREATED, saved);
         } catch (Exception e) {
             return ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, MessageConstants.INTERNAL_SERVER_ERROR, e);
@@ -126,8 +161,11 @@ public class AdminContentService {
 
             Dataset d = toDataset(req);
             d.setId(id);
+            d.setSlug(existing.getSlug());
             d.setCreatedAt(existing.getCreatedAt());
-            return ApiResponse.call(HttpStatus.OK, MessageConstants.CONTENT_UPDATED, datasetRepo.save(d));
+            Dataset saved = datasetRepo.save(d);
+            upsertMetadataNames(id, req.getTableNames());
+            return ApiResponse.call(HttpStatus.OK, MessageConstants.CONTENT_UPDATED, saved);
         } catch (Exception e) {
             return ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, MessageConstants.INTERNAL_SERVER_ERROR, e);
         }
@@ -418,6 +456,101 @@ public class AdminContentService {
         }
     }
 
+    // ── Solution generate (execute SQL → save expected output) ───────────────
+
+    public ResponseEntity<ApiResponse<ExpectedSolution>> generateAndSaveSolution(
+            String questionId, AdminSolutionGenerateRequestDTO req) {
+        try {
+            Problem problem = problemRepo.findById(questionId);
+            if (problem == null)
+                return ApiResponse.call(HttpStatus.NOT_FOUND, MessageConstants.QUESTION_NOT_FOUND);
+
+            Dataset dataset = datasetRepo.findById(problem.getDatasetId());
+            if (dataset == null)
+                return ApiResponse.call(HttpStatus.NOT_FOUND, MessageConstants.DATASET_NOT_FOUND);
+
+            if (!canWrite(dataset.getDataType()))
+                return ApiResponse.call(HttpStatus.FORBIDDEN, MessageConstants.NO_WRITE_ACCESS);
+
+            // Build schema from dataset metadata
+            Metadata metadata = metadataRepo.findByDatasetId(problem.getDatasetId());
+            String schemaSql = SchemaGenerator.generate(metadata, req.getSqlMode());
+
+            // Get test cases for seed data (prefer PUBLIC, fall back to all)
+            List<TestCase> testCases = testCaseService.findTestCasesByTypeAndQuestionId(
+                    TestCaseType.PUBLIC, questionId);
+            if (testCases.isEmpty())
+                testCases = testCaseService.findTestCasesByQuestionId(questionId);
+            if (testCases.isEmpty())
+                return ApiResponse.call(HttpStatus.BAD_REQUEST, "No test cases found — add at least one test case before generating a solution");
+
+            // Build engine payloads
+            String finalSchemaSql = schemaSql;
+            List<TestCaseEnginePayload> enginePayloads = testCases.stream()
+                    .map(tc -> new TestCaseEnginePayload(
+                            tc.getId(),
+                            finalSchemaSql,
+                            SeedGenerator.generate(tc.getSampleData()),
+                            tc.getNumericTolerance(),
+                            tc.getType()))
+                    .collect(java.util.stream.Collectors.toList());
+
+            // sql == expectedSql so the engine "passes" and we get back the output
+            SQLPayload sqlPayload = new SQLPayload(
+                    req.getSolutionQuery(), questionId,
+                    problem.getType(), req.getSolutionQuery(),
+                    enginePayloads, req.getSqlMode());
+
+            JudgeJobPayload jobPayload = new JudgeJobPayload();
+            jobPayload.setJobId(UUID.randomUUID().toString());
+            jobPayload.setType("SQL");
+            jobPayload.setUserId("admin");
+            jobPayload.setPayload(objectMapper.writeValueAsString(sqlPayload));
+
+            RunTestcaseResponseDTO engineResult = sqlRemoteRepository.runPublicTestCases(jobPayload);
+
+            if (engineResult.getTestDetails() == null || engineResult.getTestDetails().isEmpty())
+                return ApiResponse.call(HttpStatus.BAD_GATEWAY, "Engine returned no output — check the SQL and dataset metadata");
+
+            Map<String, Object> firstDetail = objectMapper.convertValue(
+                    engineResult.getTestDetails().get(0),
+                    new TypeReference<Map<String, Object>>() {});
+
+            Object rawOutput = firstDetail.get("userOutput");
+            if (rawOutput == null)
+                return ApiResponse.call(HttpStatus.BAD_GATEWAY, "Engine did not return query output");
+
+            ExpectedSolution.OutputData output = objectMapper.convertValue(
+                    rawOutput, ExpectedSolution.OutputData.class);
+
+            // Build single SolutionEntry
+            ExpectedSolution.SolutionEntry entry = new ExpectedSolution.SolutionEntry();
+            entry.setSolutionQuery(req.getSolutionQuery());
+            entry.setExpectedOutput(output);
+
+            // Upsert: enforce exactly 1 solution per question
+            List<ExpectedSolution> existing = solutionRepo.findByQuestionId(questionId);
+            ExpectedSolution sol = new ExpectedSolution();
+            sol.setQuestionId(questionId);
+            sol.setDatasetId(problem.getDatasetId());
+            sol.setSqlMode(req.getSqlMode());
+            sol.setSolutions(List.of(entry));
+
+            if (!existing.isEmpty()) {
+                sol.setId(existing.get(0).getId());
+                sol.setCreatedAt(existing.get(0).getCreatedAt());
+                return ApiResponse.call(HttpStatus.OK, MessageConstants.CONTENT_UPDATED,
+                        solutionRepo.save(sol));
+            }
+            return ApiResponse.call(HttpStatus.CREATED, MessageConstants.CONTENT_CREATED,
+                    solutionRepo.save(sol));
+
+        } catch (Exception e) {
+            return ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR,
+                    MessageConstants.INTERNAL_SERVER_ERROR, e);
+        }
+    }
+
     // ── Resolvers ─────────────────────────────────────────────────────────────
 
     private String resolveModuleByProblem(String problemId) {
@@ -432,7 +565,7 @@ public class AdminContentService {
 
     private Dataset toDataset(AdminDatasetRequestDTO req) {
         Dataset d = new Dataset();
-        d.setSlug(req.getSlug());
+        d.setSlug(generateSlug(req.getTitle()));
         d.setTitle(req.getTitle());
         d.setDescription(req.getDescription());
         d.setIcon(req.getIcon());
@@ -443,8 +576,39 @@ public class AdminContentService {
         d.setCategories(req.getCategories());
         d.setSkills(req.getSkills());
         d.setModesAvailable(req.getModesAvailable());
-        d.setTableCount(req.getTableCount());
+        d.setTableCount(req.getTableNames() != null ? req.getTableNames().size() : 0);
+        d.setActive(req.getActive());
         return d;
+    }
+
+    private void upsertMetadataNames(String datasetId, List<String> names) {
+        if (names == null || names.isEmpty()) return;
+
+        // Preserve existing column definitions for tables whose name hasn't changed
+        Metadata existing = metadataRepo.findByDatasetId(datasetId);
+        java.util.Map<String, Metadata.TableSchema> byName = (existing != null && existing.getTables() != null)
+                ? existing.getTables().stream().collect(java.util.stream.Collectors.toMap(
+                        Metadata.TableSchema::getName, s -> s, (a, b) -> a))
+                : new java.util.HashMap<>();
+
+        List<Metadata.TableSchema> schemas = names.stream().map(name -> {
+            if (byName.containsKey(name)) return byName.get(name);
+            Metadata.TableSchema s = new Metadata.TableSchema();
+            s.setName(name);
+            s.setColumns(new java.util.ArrayList<>());
+            return s;
+        }).collect(java.util.stream.Collectors.toList());
+
+        metadataRepo.upsertByDatasetId(datasetId, schemas);
+    }
+
+    private String generateSlug(String title) {
+        String datePart = java.time.LocalDate.now()
+                .format(java.time.format.DateTimeFormatter.ofPattern("yyMMdd"));
+        String titlePart = title.trim().toLowerCase()
+                .replaceAll("[^a-z0-9\\s]", "")
+                .replaceAll("\\s+", "-");
+        return titlePart + "-" + datePart;
     }
 
     private Problem toProblem(AdminProblemRequestDTO req) {

@@ -38,12 +38,17 @@ public class DatasetSQLRepository {
         d.setTableCount(rs.getInt("tableCount"));
         d.setDataType(rs.getString("dataType"));
         d.setEstimatedTime(rs.getString("estimatedTime"));
+        d.setActive(rs.getInt("active"));
         try {
             d.setTags(mapper.readValue(rs.getString("tags"), new TypeReference<>() {}));
             d.setCategories(mapper.readValue(rs.getString("categories"), new TypeReference<>() {}));
             d.setSkills(mapper.readValue(rs.getString("skills"), new TypeReference<>() {}));
             String modesJson = rs.getString("modesAvailable");
             d.setModesAvailable(modesJson != null ? mapper.readValue(modesJson, new TypeReference<>() {}) : null);
+            String tableNamesJson = rs.getString("tableNames");
+            d.setTableNames(tableNamesJson != null
+                    ? mapper.readValue(tableNamesJson, new TypeReference<List<String>>() {})
+                    : new java.util.ArrayList<>());
         } catch (Exception e) {
             throw new RuntimeException("Failed to deserialize dataset JSONB fields", e);
         }
@@ -78,31 +83,75 @@ public class DatasetSQLRepository {
         return count != null ? count : 0L;
     }
 
+    // ── Admin (all active states) ─────────────────────────────────────────────
+
+    public List<Dataset> findByModulePaged(String module, int limit, int offset) {
+        return jdbc.query(queries.FIND_BY_MODULE_PAGED, rowMapper(), module, limit, offset);
+    }
+
+    public long countByModule(String module) {
+        Long count = jdbc.queryForObject(queries.COUNT_BY_MODULE, Long.class, module);
+        return count != null ? count : 0L;
+    }
+
+    public List<Dataset> findByModuleAndTitlePaged(String module, String search, int limit, int offset) {
+        return jdbc.query(queries.FIND_BY_MODULE_AND_TITLE_PAGED, rowMapper(), module, "%" + search + "%", limit, offset);
+    }
+
+    public long countByModuleAndTitle(String module, String search) {
+        Long count = jdbc.queryForObject(queries.COUNT_BY_MODULE_AND_TITLE, Long.class, module, "%" + search + "%");
+        return count != null ? count : 0L;
+    }
+
+    // ── User-facing (active = 1 only) ─────────────────────────────────────────
+
+    public List<Dataset> findByModulePagedActive(String module, int limit, int offset) {
+        return jdbc.query(queries.FIND_BY_MODULE_PAGED_ACTIVE, rowMapper(), module, limit, offset);
+    }
+
+    public long countByModuleActive(String module) {
+        Long count = jdbc.queryForObject(queries.COUNT_BY_MODULE_ACTIVE, Long.class, module);
+        return count != null ? count : 0L;
+    }
+
+    public List<Dataset> findByModuleAndTitlePagedActive(String module, String search, int limit, int offset) {
+        return jdbc.query(queries.FIND_BY_MODULE_AND_TITLE_PAGED_ACTIVE, rowMapper(), module, "%" + search + "%", limit, offset);
+    }
+
+    public long countByModuleAndTitleActive(String module, String search) {
+        Long count = jdbc.queryForObject(queries.COUNT_BY_MODULE_AND_TITLE_ACTIVE, Long.class, module, "%" + search + "%");
+        return count != null ? count : 0L;
+    }
+
+    // ── Mutations ─────────────────────────────────────────────────────────────
+
     public Dataset save(Dataset d) {
         try {
+            String categoriesJson = d.getCategories() != null ? mapper.writeValueAsString(d.getCategories()) : "[]";
+
             if (d.getId() == null) {
                 String id = jdbc.queryForObject(queries.INSERT, String.class,
                         d.getSlug(), d.getTitle(), d.getDescription(),
                         d.getIcon(), d.getCoverImage(), d.getErImage(),
                         mapper.writeValueAsString(d.getTags()),
-                        mapper.writeValueAsString(d.getCategories()),
+                        categoriesJson,
                         mapper.writeValueAsString(d.getSkills()),
                         d.getDifficulty(),
                         d.getModesAvailable() != null ? mapper.writeValueAsString(d.getModesAvailable()) : null,
                         d.getQuestions(), d.getTableCount(), d.getDataType(),
-                        d.getEstimatedTime(), d.getCreatedAt());
+                        d.getEstimatedTime(), d.getActive(), d.getCreatedAt());
                 d.setId(id);
             } else {
                 jdbc.update(queries.UPDATE,
                         d.getSlug(), d.getTitle(), d.getDescription(),
                         d.getIcon(), d.getCoverImage(), d.getErImage(),
                         mapper.writeValueAsString(d.getTags()),
-                        mapper.writeValueAsString(d.getCategories()),
+                        categoriesJson,
                         mapper.writeValueAsString(d.getSkills()),
                         d.getDifficulty(),
                         d.getModesAvailable() != null ? mapper.writeValueAsString(d.getModesAvailable()) : null,
                         d.getQuestions(), d.getTableCount(), d.getDataType(),
-                        d.getEstimatedTime(), d.getId());
+                        d.getEstimatedTime(), d.getActive(), d.getId());
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to save dataset", e);
@@ -141,24 +190,6 @@ public class DatasetSQLRepository {
 
     public void softDeleteById(String id) {
         jdbc.update(queries.SOFT_DELETE_BY_ID, id);
-    }
-
-    public List<Dataset> findByModulePaged(String module, int limit, int offset) {
-        return jdbc.query(queries.FIND_BY_MODULE_PAGED, rowMapper(), module, limit, offset);
-    }
-
-    public long countByModule(String module) {
-        Long count = jdbc.queryForObject(queries.COUNT_BY_MODULE, Long.class, module);
-        return count != null ? count : 0L;
-    }
-
-    public List<Dataset> findByModuleAndTitlePaged(String module, String search, int limit, int offset) {
-        return jdbc.query(queries.FIND_BY_MODULE_AND_TITLE_PAGED, rowMapper(), module, "%" + search + "%", limit, offset);
-    }
-
-    public long countByModuleAndTitle(String module, String search) {
-        Long count = jdbc.queryForObject(queries.COUNT_BY_MODULE_AND_TITLE, Long.class, module, "%" + search + "%");
-        return count != null ? count : 0L;
     }
 
     public void incrementQuestions(String datasetId) {
